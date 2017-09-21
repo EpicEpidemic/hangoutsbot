@@ -2,13 +2,15 @@
 based on the word/image list for the image linker bot on reddit
 sauce: http://www.reddit.com/r/image_linker_bot/comments/2znbrg/image_suggestion_thread_20/
 """
-import aiohttp, io, logging, os, random, re
-
+import aiohttp
+import io
+import logging
+import os
 import plugins
-
+import random
+import re
 
 logger = logging.getLogger(__name__)
-
 
 _lookup = {}
 
@@ -40,7 +42,7 @@ def _scan_for_triggers(bot, event, command):
             if count >= limit:
                 break
 
-    image_links = list(set(image_links)) # make unique
+    image_links = list(set(image_links))  # make unique
 
     if len(image_links) > 0:
         for image_link in image_links:
@@ -49,10 +51,11 @@ def _scan_for_triggers(bot, event, command):
             except KeyError:
                 logger.warning('image plugin not loaded - using legacy code')
                 if re.match(r'^https?://gfycat.com', image_link):
-                    image_link = re.sub(r'^https?://gfycat.com/', 'https://thumbs.gfycat.com/', image_link) + '-size_restricted.gif'
+                    image_link = re.sub(r'^https?://gfycat.com/', 'https://thumbs.gfycat.com/',
+                                        image_link) + '-size_restricted.gif'
                 elif "imgur.com" in image_link:
-                    image_link = image_link.replace(".gifv",".gif")
-                    image_link = image_link.replace(".webm",".gif")
+                    image_link = image_link.replace(".gifv", ".gif")
+                    image_link = image_link.replace(".webm", ".gif")
                 filename = os.path.basename(image_link)
                 r = yield from aiohttp.request('get', image_link)
                 raw = yield from r.read()

@@ -1,9 +1,9 @@
-import asyncio, logging, re
-
+import asyncio
+import logging
+import re
 from random import shuffle
 
 import plugins
-
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ def _get_global_lottery_name(bot, conversation_id, listname):
                 # seek the current room, if any
                 if conversation_id in sync_room_list:
                     _linked_rooms = sync_room_list
-                    _linked_rooms.sort() # keeps the order consistent
+                    _linked_rooms.sort()  # keeps the order consistent
                     conversation_id = ":".join(_linked_rooms)
                     logger.debug("joint room keys {}".format(conversation_id))
 
@@ -71,7 +71,7 @@ def prepare(bot, event, *args):
         listdef = args[1]
     global_draw_name = _get_global_lottery_name(bot, event.conv.id_, listname)
 
-    draw_lists = _load_lottery_state(bot) # load any existing draws
+    draw_lists = _load_lottery_state(bot)  # load any existing draws
 
     draw_lists[global_draw_name] = {"box": [], "users": {}}
 
@@ -98,7 +98,7 @@ def prepare(bot, event, *args):
             raise Exception(_("prepare: min and max are the same ({})").format(min))
         if max < min:
             min, max = max, min
-        max = max + 1 # inclusive
+        max = max + 1  # inclusive
         draw_lists[global_draw_name]["box"] = list(range(min, max))
 
     else:
@@ -124,11 +124,12 @@ def prepare(bot, event, *args):
         shuffle(draw_lists[global_draw_name]["box"])
         yield from bot.coro_send_message(
             event.conv,
-            _("The <b>{}</b> lottery is ready: {} items loaded and shuffled into the box.").format(listname, len(draw_lists[global_draw_name]["box"])))
+            _("The <b>{}</b> lottery is ready: {} items loaded and shuffled into the box.").format(listname, len(
+                draw_lists[global_draw_name]["box"])))
     else:
         raise Exception(_("prepare: {} was initialised empty").format(global_draw_name))
 
-    _save_lottery_state(bot, draw_lists) # persist lottery drawings
+    _save_lottery_state(bot, draw_lists)  # persist lottery drawings
 
 
 def perform_drawing(bot, event, *args):
@@ -142,7 +143,7 @@ def perform_drawing(bot, event, *args):
         XXX: check is for singular, plural "-s" and plural "-es"
     """
 
-    draw_lists = _load_lottery_state(bot) # load in any existing lotteries
+    draw_lists = _load_lottery_state(bot)  # load in any existing lotteries
 
     pattern = re.compile(".+ draws?( +(a +|an +|from +)?([a-z0-9\-_]+))?$", re.IGNORECASE)
     if pattern.match(event.text):
@@ -174,18 +175,21 @@ def perform_drawing(bot, event, *args):
                 if event.user.id_.chat_id in draw_lists[global_draw_name]["users"]:
                     # user already drawn something from the box
                     yield from bot.coro_send_message(event.conv,
-                        _("<b>{}</b>, you have already drawn <b>{}</b> from the <b>{}</b> box").format(
-                            event.user.full_name,
-                            draw_lists[global_draw_name]["users"][event.user.id_.chat_id],
-                            word))
+                                                     _(
+                                                         "<b>{}</b>, you have already drawn <b>{}</b> from the <b>{}</b> box").format(
+                                                         event.user.full_name,
+                                                         draw_lists[global_draw_name]["users"][event.user.id_.chat_id],
+                                                         word))
 
                 else:
                     # draw something for the user
                     _thing = str(draw_lists[global_draw_name]["box"].pop())
 
-                    text_drawn = _("<b>{}</b> draws <b>{}</b> from the <b>{}</b> box. ").format(event.user.full_name, _thing, word, );
+                    text_drawn = _("<b>{}</b> draws <b>{}</b> from the <b>{}</b> box. ").format(event.user.full_name,
+                                                                                                _thing, word, );
                     if len(draw_lists[global_draw_name]["box"]) == 0:
-                        text_drawn = text_drawn + _("...AAAAAND its all gone! The <b>{}</b> lottery is over folks.").format(word)
+                        text_drawn = text_drawn + _(
+                            "...AAAAAND its all gone! The <b>{}</b> lottery is over folks.").format(word)
 
                     yield from bot.coro_send_message(event.conv, text_drawn)
 
@@ -194,8 +198,9 @@ def perform_drawing(bot, event, *args):
                 text_finished = _("<b>{}</b>, the <b>{}</b> lottery is over. ").format(event.user.full_name, word);
 
                 if event.user.id_.chat_id in draw_lists[global_draw_name]["users"]:
-                    text_finished = _("You drew a {} previously.").format(draw_lists[global_draw_name]["users"][event.user.id_.chat_id]);
+                    text_finished = _("You drew a {} previously.").format(
+                        draw_lists[global_draw_name]["users"][event.user.id_.chat_id]);
 
                 yield from bot.coro_send_message(event.conv, text_finished)
 
-    _save_lottery_state(bot, draw_lists) # persist lottery drawings
+    _save_lottery_state(bot, draw_lists)  # persist lottery drawings

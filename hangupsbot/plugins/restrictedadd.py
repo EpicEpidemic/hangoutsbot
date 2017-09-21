@@ -1,9 +1,9 @@
-import asyncio, logging, time
+import asyncio
+import logging
+import time
 
 import hangups
-
 import plugins
-
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ def _botkeeper_list(bot, conv_id):
 
     botkeepers = tagged_botkeeper + admins_list + allowbotadd
 
-    botkeepers = list(set(botkeepers) - set([ bot.user_self()["chat_id"] ]))
+    botkeepers = list(set(botkeepers) - set([bot.user_self()["chat_id"]]))
 
     return botkeepers
 
@@ -69,7 +69,9 @@ def _check_if_admin_added_me(bot, event, command):
 
                 yield from bot.coro_send_message(
                     event.conv,
-                    _("<i>{}, you need to be authorised to add me to another conversation. I'm leaving now...</i>").format(event.user.full_name))
+                    _(
+                        "<i>{}, you need to be authorised to add me to another conversation. I'm leaving now...</i>").format(
+                        event.user.full_name))
 
                 yield from _leave_the_chat_quietly(bot, event, command)
 
@@ -142,7 +144,7 @@ def allowbotadd(bot, event, user_id, *args):
     bot.memory["allowbotadd"] = allowbotadd
     bot.memory.save()
 
-    _internal.last_verified = {} # force checks everywhere
+    _internal.last_verified = {}  # force checks everywhere
 
 
 def removebotadd(bot, event, user_id, *args):
@@ -165,7 +167,7 @@ def removebotadd(bot, event, user_id, *args):
         bot.memory["allowbotadd"] = allowbotadd
         bot.memory.save()
 
-        _internal.last_verified = {} # force checks everywhere
+        _internal.last_verified = {}  # force checks everywhere
     else:
         yield from bot.coro_send_message(
             event.conv,

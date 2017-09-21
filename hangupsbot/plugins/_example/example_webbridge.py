@@ -1,5 +1,3 @@
-import plugins
-
 from webbridge import WebFramework, IncomingRequestHandler
 
 
@@ -37,4 +35,3 @@ def _initialise(bot):
     
     """
     BridgeInstance(bot, "samplebridge", IncomingMessages)
-

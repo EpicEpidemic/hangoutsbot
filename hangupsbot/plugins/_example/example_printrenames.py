@@ -2,8 +2,8 @@
 example plugin which watches rename events
 """
 
-import asyncio, logging
-
+import asyncio
+import logging
 
 logger = logging.getLogger(__name__)
 

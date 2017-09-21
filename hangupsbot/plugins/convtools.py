@@ -1,11 +1,8 @@
-import asyncio, logging, random, string
-
-import hangups
+import asyncio
+import logging
 
 import plugins
-
 from commands import command
-
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +24,10 @@ def _batch_add_users(bot, target_conv, chat_ids, batch_max=20):
     chat_ids = not_there
 
     users_added = 0
-    chunks = [chat_ids[i:i+batch_max] for i in range(0, len(chat_ids), batch_max)]
+    chunks = [chat_ids[i:i + batch_max] for i in range(0, len(chat_ids), batch_max)]
     for number, partial_list in enumerate(chunks):
-        logger.info("batch add users: {}/{} {} user(s) into {}".format(number+1, len(chunks), len(partial_list), target_conv))
+        logger.info(
+            "batch add users: {}/{} {} user(s) into {}".format(number + 1, len(chunks), len(partial_list), target_conv))
         yield from bot._client.adduser(target_conv, partial_list)
         users_added = users_added + len(partial_list)
         yield from asyncio.sleep(0.5)
@@ -82,7 +80,7 @@ def createconversation(bot, event, *args):
     Usage: /bot createconversation <user id(s)>"""
     parameters = list(args)
 
-    force_group = False # default: defer to hangups client decision
+    force_group = False  # default: defer to hangups client decision
 
     if "group" in parameters:
         parameters.remove("group")
@@ -171,7 +169,8 @@ def refresh(bot, event, *args):
 
     list_added = list(set(list_added))
 
-    logger.debug("refresh: from conversation {} removed {} added {}".format(source_conv, len(list_removed), len(list_added)))
+    logger.debug(
+        "refresh: from conversation {} removed {} added {}".format(source_conv, len(list_removed), len(list_added)))
 
     if test:
         yield from bot.coro_send_message(event.conv_id,
@@ -179,9 +178,11 @@ def refresh(bot, event, *args):
                                            "<b>rename old: {}</b><br />"
                                            "<b>removed {}:</b> {}<br />"
                                            "<b>added {}:</b> {}").format(source_conv,
-                                                                         old_title if renameold else _("<em>unchanged</em>"),
+                                                                         old_title if renameold else _(
+                                                                             "<em>unchanged</em>"),
                                                                          len(text_removed_users),
-                                                                         ", ".join(text_removed_users) or _("<em>none</em>"),
+                                                                         ", ".join(text_removed_users) or _(
+                                                                             "<em>none</em>"),
                                                                          len(list_added),
                                                                          " ".join(list_added) or _("<em>none</em>")))
     else:
@@ -201,14 +202,15 @@ def refresh(bot, event, *args):
             if not quietly:
                 yield from bot.coro_send_message(source_conv, _("<i>group has been obsoleted</i>"))
 
-            yield from bot.coro_send_message( event.conv_id,
-                                              _("refreshed: <b><pre>{}</pre></b> (original id: <pre>{}</pre>).<br />"
-                                                "new conversation id: <b><pre>{}</pre></b>.<br />"
-                                                "removed {}: {}").format( new_title,
-                                                                          source_conv,
-                                                                          new_conversation_id,
-                                                                          len(text_removed_users),
-                                                                          ", ".join(text_removed_users) or _("<em>none</em>") ))
+            yield from bot.coro_send_message(event.conv_id,
+                                             _("refreshed: <b><pre>{}</pre></b> (original id: <pre>{}</pre>).<br />"
+                                               "new conversation id: <b><pre>{}</pre></b>.<br />"
+                                               "removed {}: {}").format(new_title,
+                                                                        source_conv,
+                                                                        new_conversation_id,
+                                                                        len(text_removed_users),
+                                                                        ", ".join(text_removed_users) or _(
+                                                                            "<em>none</em>")))
 
         else:
             yield from bot.coro_send_message(event.conv_id, _("<b>nobody to add in the new conversation</b>"))

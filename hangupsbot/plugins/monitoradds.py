@@ -8,9 +8,7 @@ Author: @Riptides
 import logging
 
 import hangups
-
 import plugins
-
 
 logger = logging.getLogger(__name__)
 
@@ -58,10 +56,11 @@ def _watch_new_adds(bot, event, command):
 
         yield from bot.coro_send_message(event.conv, html)
 
+
 def addmod(bot, event, *args):
     """add user id(s) to the whitelist of who can add to a hangout"""
     mod_ids = list(args)
-    if(bot.get_config_suboption(event.conv_id, 'mods') != None):
+    if (bot.get_config_suboption(event.conv_id, 'mods') != None):
         for mod in bot.get_config_suboption(event.conv_id, 'mods'):
             mod_ids.append(mod)
         bot.config.set_by_path(["mods"], mod_ids)
@@ -73,6 +72,7 @@ def addmod(bot, event, *args):
         bot.config.save()
         html_message = _("<i>Moderators updated: {} added</i>")
         yield from bot.coro_send_message(event.conv, html_message.format(args[0]))
+
 
 def delmod(bot, event, *args):
     """remove user id(s) from the whitelist of who can add to a hangout"""

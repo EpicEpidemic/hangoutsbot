@@ -1,14 +1,12 @@
-import logging
-import shlex
 import asyncio
 import inspect
+import logging
+import shlex
 import uuid
 
 import hangups
-
 import plugins
 from commands import command
-
 
 logger = logging.getLogger(__name__)
 
@@ -23,19 +21,18 @@ class EventHandler:
         self._prefix_reprocessor = "uuid://"
         self._reprocessors = {}
 
-        self.pluggables = { "allmessages": [],
-                            "call": [],
-                            "membership": [],
-                            "message": [],
-                            "rename": [],
-                            "sending":[],
-                            "typing": [],
-                            "watermark": [] }
+        self.pluggables = {"allmessages": [],
+                           "call": [],
+                           "membership": [],
+                           "message": [],
+                           "rename": [],
+                           "sending": [],
+                           "typing": [],
+                           "watermark": []}
 
-        bot.register_shared( 'reprocessor.attach_reprocessor',
-                             self.attach_reprocessor,
-                             forgiving=True )
-
+        bot.register_shared('reprocessor.attach_reprocessor',
+                            self.attach_reprocessor,
+                            forgiving=True)
 
     def register_handler(self, function, type="message", priority=50):
         """registers extra event handlers"""
@@ -68,9 +65,9 @@ class EventHandler:
         _id = self.register_reprocessor(callable)
         context_fragment = '<a href="' + self._prefix_reprocessor + _id + '"> </a>'
         if return_as_dict:
-            return { "id": _id,
-                     "callable": callable,
-                     "fragment": context_fragment }
+            return {"id": _id,
+                    "callable": callable,
+                    "fragment": context_fragment}
         else:
             return context_fragment
 
@@ -80,26 +77,26 @@ class EventHandler:
         """registers a shared object into bot.shared
         historically, this function was more lenient than the actual bot function it calls
         """
-        logger.debug(   "[LEGACY] plugins.register_shared()"
-                        " instead of handlers.register_object()")
+        logger.debug("[LEGACY] plugins.register_shared()"
+                     " instead of handlers.register_object()")
 
         self.bot.register_shared(id, objectref, forgiving=forgiving)
 
     def register_user_command(self, command_names):
-        logger.debug(   "[LEGACY] plugins.register_user_command()"
-                        " instead of handlers.register_user_command()")
+        logger.debug("[LEGACY] plugins.register_user_command()"
+                     " instead of handlers.register_user_command()")
 
         plugins.register_user_command(command_names)
 
     def register_admin_command(self, command_names):
-        logger.debug(   "[LEGACY] plugins.register_admin_command()"
-                        " instead of handlers.register_admin_command()")
+        logger.debug("[LEGACY] plugins.register_admin_command()"
+                     " instead of handlers.register_admin_command()")
 
         plugins.register_admin_command(command_names)
 
     def get_admin_commands(self, conversation_id):
-        logger.debug(   "[LEGACY] command.get_admin_commands()"
-                        " instead of handlers.get_admin_commands()")
+        logger.debug("[LEGACY] command.get_admin_commands()"
+                     " instead of handlers.get_admin_commands()")
 
         return command.get_admin_commands(self.bot, conversation_id)
 
@@ -168,13 +165,14 @@ class EventHandler:
 
         # check that a bot alias is used e.g. /bot
         if not event.text.split()[0].lower() in self.bot_command:
-            if self.bot.conversations.catalog[event.conv_id]["type"] == "ONE_TO_ONE" and self.bot.get_config_option('auto_alias_one_to_one'):
-                event.text = u" ".join((self.bot_command[0], event.text)) # Insert default alias if not already present
+            if self.bot.conversations.catalog[event.conv_id]["type"] == "ONE_TO_ONE" and self.bot.get_config_option(
+                    'auto_alias_one_to_one'):
+                event.text = u" ".join((self.bot_command[0], event.text))  # Insert default alias if not already present
             else:
                 return
 
         # Parse message
-        event.text = event.text.replace(u'\xa0', u' ') # convert non-breaking space in Latin1 (ISO 8859-1)
+        event.text = event.text.replace(u'\xa0', u' ')  # convert non-breaking space in Latin1 (ISO 8859-1)
         try:
             line_args = shlex.split(event.text, posix=False)
         except Exception as e:
@@ -191,7 +189,7 @@ class EventHandler:
                 yield from self.bot.coro_send_message(event.conv, _('{}: Missing parameter(s)').format(
                     event.user.full_name))
             return
-        
+
         commands = command.get_available_commands(self.bot, event.user.id_.chat_id, event.conv_id)
 
         supplied_command = line_args[1].lower()
@@ -244,9 +242,9 @@ class EventHandler:
             try:
                 for function, priority, plugin_metadata in self.pluggables[name]:
                     message = ["{}: {}.{}".format(
-                                name,
-                                plugin_metadata["module.path"],
-                                function.__name__)]
+                        name,
+                        plugin_metadata["module.path"],
+                        function.__name__)]
 
                     try:
                         """accepted handler signatures:
@@ -286,6 +284,7 @@ class EventHandler:
             except:
                 raise
 
+
 class HandlerBridge:
     """shim for xmikosbot handler decorator"""
 
@@ -297,7 +296,7 @@ class HandlerBridge:
         """Decorator for registering event handler"""
 
         # make compatible with this bot fork
-        scaled_priority = priority * 10 # scale for compatibility - xmikos range 1 - 10
+        scaled_priority = priority * 10  # scale for compatibility - xmikos range 1 - 10
         if event is hangups.ChatMessageEvent:
             event_type = "message"
         elif event is hangups.MembershipChangeEvent:
@@ -305,7 +304,7 @@ class HandlerBridge:
         elif event is hangups.RenameEvent:
             event_type = "rename"
         elif type(event) is str:
-            event_type = str # accept all kinds of strings, just like register_handler
+            event_type = str  # accept all kinds of strings, just like register_handler
         else:
             raise ValueError("unrecognised event {}".format(event))
 
@@ -325,5 +324,6 @@ class HandlerBridge:
             return wrapper(args[0])
         else:
             return wrapper
+
 
 handler = HandlerBridge()

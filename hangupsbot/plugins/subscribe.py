@@ -4,9 +4,7 @@ import re
 import sys
 
 import plugins
-
 from utils import remove_accents
-
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +13,7 @@ class __internal_vars():
     def __init__(self):
         """ Cache to keep track of what keywords are being watched. Listed by user_id """
         self.keywords = {}
+
 
 _internal = __internal_vars()
 
@@ -44,15 +43,15 @@ def _handle_keyword(bot, event, command, include_event_user=False):
                 for syncedroom in sync_room_list:
                     if event.conv_id not in syncedroom:
                         users_in_chat += bot.get_users_in_conversation(syncedroom)
-                users_in_chat = list(set(users_in_chat)) # make unique
+                users_in_chat = list(set(users_in_chat))  # make unique
 
     event_text = re.sub(r"\s+", " ", event.text)
     event_text_lower = event.text.lower()
     for user in users_in_chat:
         chat_id = user.id_.chat_id
         try:
-            if _internal.keywords[chat_id] and ( not chat_id in event.user.id_.chat_id
-                                                 or include_event_user ):
+            if _internal.keywords[chat_id] and (not chat_id in event.user.id_.chat_id
+                                                or include_event_user):
                 for phrase in _internal.keywords[chat_id]:
                     regexphrase = r"(^|\b| )" + re.escape(phrase) + r"($|\b)"
                     if re.search(regexphrase, event_text, re.IGNORECASE):
@@ -66,17 +65,19 @@ def _handle_keyword(bot, event, command, include_event_user=False):
                             if (_mention + " ") in event_text_lower or event_text_lower.endswith(_mention):
                                 user = bot.get_hangups_user(chat_id)
                                 _normalised_full_name_lower = remove_accents(user.full_name.lower())
-                                if( _phrase_lower in _normalised_full_name_lower
-                                        or _phrase_lower in _normalised_full_name_lower.replace(" ", "")
-                                        or _phrase_lower in _normalised_full_name_lower.replace(" ", "_") ):
+                                if (_phrase_lower in _normalised_full_name_lower
+                                    or _phrase_lower in _normalised_full_name_lower.replace(" ", "")
+                                    or _phrase_lower in _normalised_full_name_lower.replace(" ", "_")):
                                     # part of name mention: skip
-                                    logger.debug("subscription matched full name fragment {}, skipping".format(user.full_name))
+                                    logger.debug(
+                                        "subscription matched full name fragment {}, skipping".format(user.full_name))
                                     continue
                                 if bot.memory.exists(['user_data', chat_id, "nickname"]):
                                     _nickname = bot.memory.get_by_path(['user_data', chat_id, "nickname"])
                                     if _phrase_lower == _nickname.lower():
                                         # nickname mention: skip
-                                        logger.debug("subscription matched exact nickname {}, skipping".format(_nickname))
+                                        logger.debug(
+                                            "subscription matched exact nickname {}, skipping".format(_nickname))
                                         continue
 
                         yield from _send_notification(bot, event, phrase, user)
@@ -114,13 +115,13 @@ def _send_notification(bot, event, phrase, user):
         source_name = event._external_source
 
     """send alert with 1on1 conversation"""
-    conv_1on1 = yield from bot.get_1to1(user.id_.chat_id, context={ 'initiator_convid': event.conv_id })
+    conv_1on1 = yield from bot.get_1to1(user.id_.chat_id, context={'initiator_convid': event.conv_id})
     if conv_1on1:
         try:
             user_has_dnd = bot.call_shared("dnd.user_check", user.id_.chat_id)
         except KeyError:
             user_has_dnd = False
-        if not user_has_dnd: # shared dnd check
+        if not user_has_dnd:  # shared dnd check
             yield from bot.coro_send_message(
                 conv_1on1,
                 _("<b>{}</b> mentioned '{}' in <i>{}</i>:<br />{}").format(
@@ -150,7 +151,7 @@ def subscribe(bot, event, *args):
 
     if not keyword:
         yield from bot.coro_send_message(
-            event.conv,_("Usage: /bot subscribe [keyword]"))
+            event.conv, _("Usage: /bot subscribe [keyword]"))
         if _internal.keywords[event.user.id_.chat_id]:
             yield from bot.coro_send_message(
                 event.conv,
@@ -161,7 +162,7 @@ def subscribe(bot, event, *args):
         if keyword in _internal.keywords[event.user.id_.chat_id]:
             # Duplicate!
             yield from bot.coro_send_message(
-                event.conv,_("Already subscribed to '{}'!").format(keyword))
+                event.conv, _("Already subscribed to '{}'!").format(keyword))
             return
         else:
             # Not a duplicate, proceeding
@@ -170,7 +171,8 @@ def subscribe(bot, event, *args):
                 _internal.keywords[event.user.id_.chat_id] = [keyword]
                 yield from bot.coro_send_message(
                     event.conv,
-                    _("Note: You will not be able to trigger your own subscriptions. To test, please ask somebody else to test this for you."))
+                    _(
+                        "Note: You will not be able to trigger your own subscriptions. To test, please ask somebody else to test this for you."))
             else:
                 # Not the first keyword!
                 _internal.keywords[event.user.id_.chat_id].append(keyword)
@@ -178,11 +180,12 @@ def subscribe(bot, event, *args):
         _internal.keywords[event.user.id_.chat_id] = [keyword]
         yield from bot.coro_send_message(
             event.conv,
-            _("Note: You will not be able to trigger your own subscriptions. To test, please ask somebody else to test this for you."))
-
+            _(
+                "Note: You will not be able to trigger your own subscriptions. To test, please ask somebody else to test this for you."))
 
     # Save to file
-    bot.memory.set_by_path(["user_data", event.user.id_.chat_id, "keywords"], _internal.keywords[event.user.id_.chat_id])
+    bot.memory.set_by_path(["user_data", event.user.id_.chat_id, "keywords"],
+                           _internal.keywords[event.user.id_.chat_id])
     bot.memory.save()
 
     yield from bot.coro_send_message(
@@ -199,18 +202,19 @@ def unsubscribe(bot, event, *args):
 
     if not keyword:
         yield from bot.coro_send_message(
-            event.conv,_("Unsubscribing all keywords"))
+            event.conv, _("Unsubscribing all keywords"))
         _internal.keywords[event.user.id_.chat_id] = []
     elif keyword in _internal.keywords[event.user.id_.chat_id]:
         yield from bot.coro_send_message(
-            event.conv,_("Unsubscribing from keyword '{}'").format(keyword))
+            event.conv, _("Unsubscribing from keyword '{}'").format(keyword))
         _internal.keywords[event.user.id_.chat_id].remove(keyword)
     else:
         yield from bot.coro_send_message(
-            event.conv,_("Error: keyword not found"))
+            event.conv, _("Error: keyword not found"))
 
     # Save to file
-    bot.memory.set_by_path(["user_data", event.user.id_.chat_id, "keywords"], _internal.keywords[event.user.id_.chat_id])
+    bot.memory.set_by_path(["user_data", event.user.id_.chat_id, "keywords"],
+                           _internal.keywords[event.user.id_.chat_id])
     bot.memory.save()
 
 

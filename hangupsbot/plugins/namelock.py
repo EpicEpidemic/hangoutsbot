@@ -1,12 +1,10 @@
 """Allows the user to configure the bot to watch for hangout renames
 and change the name back to a default name accordingly"""
 
-import asyncio, logging
-
-import hangups
+import asyncio
+import logging
 
 import plugins
-
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +16,6 @@ def _initialise(bot):
 
 @asyncio.coroutine
 def _watch_rename(bot, event, command):
-
     memory_topic_path = ["conv_data", event.conv_id, "topic"]
 
     topic = False
@@ -49,11 +46,11 @@ def _watch_rename(bot, event, command):
             hangups_user = bot.get_hangups_user(event.user_id.chat_id)
             logger.warning(
                 "unauthorised topic change by {} ({}) in {}, resetting: {} to: {}"
-                    .format( hangups_user.full_name,
-                             event.user_id.chat_id,
-                             event.conv_id,
-                             event.conv_event.new_name,
-                             topic ))
+                    .format(hangups_user.full_name,
+                            event.user_id.chat_id,
+                            event.conv_id,
+                            event.conv_event.new_name,
+                            topic))
 
             yield from bot._client.setchatname(event.conv_id, topic)
 
@@ -67,7 +64,7 @@ def topic(bot, event, *args):
     bot.memory.set_by_path(["conv_data", event.conv_id, "topic"], topic)
     bot.memory.save()
 
-    if(topic == ''):
+    if (topic == ''):
         message = _("Removing topic")
         logger.info("topic cleared from {}".format(event.conv_id))
 

@@ -25,10 +25,10 @@ config.json
 """
 
 import asyncio
-import plugins
 import logging
+from random import randrange
 
-from random import randrange, randint
+import plugins
 
 logger = logging.getLogger(__name__)
 

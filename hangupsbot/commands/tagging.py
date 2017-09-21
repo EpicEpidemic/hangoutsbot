@@ -1,12 +1,13 @@
-import logging, pprint
+import logging
+import pprint
 
 from commands import command
-
 
 logger = logging.getLogger(__name__)
 
 
-def _initialise(bot): pass # prevents commands from being automatically added
+def _initialise(bot): pass  # prevents commands from being automatically added
+
 
 def _tagshortcuts(event, type, id):
     """given type=conv, type=convuser, id=here expands to event.conv_id"""
@@ -87,8 +88,8 @@ def tagscommand(bot, event, *args):
             config_root = set()
             config_commands_tagged = bot.get_config_option('commands_tagged') or {}
             if command_name in config_commands_tagged and config_commands_tagged[command_name]:
-                config_root = set([ frozenset(value if isinstance(value, list) else [value])
-                    for value in config_commands_tagged[command_name] ])
+                config_root = set([frozenset(value if isinstance(value, list) else [value])
+                                   for value in config_commands_tagged[command_name]])
                 ALL_TAGS = ALL_TAGS | config_root
 
             config_conv = {}
@@ -97,8 +98,8 @@ def tagscommand(bot, event, *args):
                     if bot.config.exists(["conversations", convid, "commands_tagged"]):
                         conv_tagged = bot.config.get_by_path(["conversations", convid, "commands_tagged"])
                         if command_name in conv_tagged and conv_tagged[command_name]:
-                            config_conv[convid] = set([ frozenset(value if isinstance(value, list) else [value])
-                                for value in conv_tagged[command_name] ])
+                            config_conv[convid] = set([frozenset(value if isinstance(value, list) else [value])
+                                                       for value in conv_tagged[command_name]])
                             ALL_TAGS = ALL_TAGS | config_conv[convid]
 
             dict_tags = {}
@@ -121,7 +122,7 @@ def tagscommand(bot, event, *args):
                 for source in dict_tags[text_tags]:
                     lines.append("... {}".format(source))
 
-            if len(lines)==0:
+            if len(lines) == 0:
                 message = _("<b><pre>COMMAND: {}</pre></b> has no tags".format(command_name))
             else:
                 lines.insert(0, _("<b><pre>COMMAND: {}</pre></b>, match <b>ANY</b>:".format(command_name)))
@@ -169,13 +170,13 @@ def tagsconv(bot, event, *args):
 
     active_conv_tags = bot.tags.convactive(conv_id)
     if active_conv_tags:
-        message_taglist = ", ".join([ "<pre>{}</pre>".format(tag) for tag in active_conv_tags ])
+        message_taglist = ", ".join(["<pre>{}</pre>".format(tag) for tag in active_conv_tags])
     else:
         message_taglist = "<em>no tags returned</em>"
 
     yield from bot.coro_send_message(event.conv_id,
                                      "<b><pre>{}</pre></b>: {}".format(
-                                        conv_id, message_taglist))
+                                         conv_id, message_taglist))
 
 
 @command.register(admin=True)
@@ -196,13 +197,13 @@ def tagsuser(bot, event, *args):
 
     active_user_tags = bot.tags.useractive(chat_id, conv_id)
     if active_user_tags:
-        message_taglist = ", ".join([ "<pre>{}</pre>".format(tag) for tag in active_user_tags ])
+        message_taglist = ", ".join(["<pre>{}</pre>".format(tag) for tag in active_user_tags])
     else:
         message_taglist = "<em>no tags returned</em>"
 
     yield from bot.coro_send_message(event.conv_id,
                                      "<b><pre>{}</pre></b>@<b><pre>{}</pre></b>: {}".format(
-                                        chat_id, conv_id, message_taglist))
+                                         chat_id, conv_id, message_taglist))
 
 
 @command.register(admin=True)

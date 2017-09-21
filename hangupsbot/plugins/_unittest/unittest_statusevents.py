@@ -1,9 +1,8 @@
-import datetime, logging
+import datetime
+import logging
 
 import hangups
-
 import plugins
-
 
 logger = logging.getLogger(__name__)
 

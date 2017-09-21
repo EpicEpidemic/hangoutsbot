@@ -64,15 +64,15 @@ The environment variables from this program are passed along to
 the subprocess, along with additional helpers (see code below).
 """
 
+import asyncio
+import logging
 import os
 import re
-import logging
-import asyncio
 from asyncio.subprocess import PIPE
 from datetime import datetime, timedelta, timezone
 
-from commands import command
 import plugins
+from commands import command
 
 logger = logging.getLogger(__name__)
 
@@ -107,14 +107,14 @@ def _initialize(bot):
 
     if get_location:
         global _MAP_MATCH
-        _MAP_MATCH = re.compile(config.get("map_regex", _MAP_REGEX), re.IGNORECASE|re.MULTILINE)
+        _MAP_MATCH = re.compile(config.get("map_regex", _MAP_REGEX), re.IGNORECASE | re.MULTILINE)
         plugins.register_handler(_location_handler, type="message")
 
 
 def _expire_old_pins():
     global _MAP_PINS
     now = datetime.now(timezone.utc)
-    _MAP_PINS = {key:_MAP_PINS[key] for key in _MAP_PINS if _MAP_PINS[key]["expires"] > now}
+    _MAP_PINS = {key: _MAP_PINS[key] for key in _MAP_PINS if _MAP_PINS[key]["expires"] > now}
 
 
 def _location_handler(dummy_bot, event):
@@ -153,7 +153,7 @@ def _spawn(bot, event, *args):
     environment = {
         'HANGOUT_USER_CHATID': event.user_id.chat_id,
         'HANGOUT_USER_FULLNAME': event.user.full_name,
-        'HANGOUT_CONV_ID':  event.conv_id,
+        'HANGOUT_CONV_ID': event.conv_id,
         'HANGOUT_CONV_TAGS': ','.join(bot.tags.useractive(event.user_id.chat_id,
                                                           event.conv_id))
     }

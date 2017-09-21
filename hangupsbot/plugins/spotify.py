@@ -4,24 +4,18 @@ Creates a Spotify playlist per chat and adds music automatically by listening
 for YouTube, Soundcloud, and Spotify links (or manually with a Spotify query).
 """
 
-import aiohttp
 import asyncio
-import io
-import json
 import logging
-import os
 import re
-import plugins
 
+import plugins
+import soundcloud
+import spotipy
+import spotipy.util
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError as YouTubeHTTPError
 from requests.exceptions import HTTPError as SoundcloudHTTPError
 from spotipy.client import SpotifyException
-
-import soundcloud
-import spotipy
-import spotipy.util
-
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +60,7 @@ def _watch_for_music_link(bot, event, command):
         logger.info("Music link: {}".format(link))
 
         if "spotify" in link:
-            sp = spotipy.Spotify() # track info doesn't require user auth
+            sp = spotipy.Spotify()  # track info doesn't require user auth
             tr = sp.track(link)
             track = SpotifyTrack(tr["id"], tr["name"], tr["artists"][0]["name"])
             success = add_to_playlist(bot, event, track)
@@ -232,7 +226,7 @@ def _clean(query):
 
 def _search(groups):
     try:
-        sp = spotipy.Spotify() # search doesn't require user auth
+        sp = spotipy.Spotify()  # search doesn't require user auth
         query = " ".join(filter(None, groups))
         logger.info("Searching Spotify for '{}'".format(query))
         results = sp.search(query)

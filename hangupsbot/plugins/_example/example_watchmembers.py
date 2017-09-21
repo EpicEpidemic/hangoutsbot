@@ -2,12 +2,11 @@
 example plugin which watches join and leave events
 """
 
-import asyncio, logging
+import asyncio
+import logging
 
 import hangups
-
 import plugins
-
 
 logger = logging.getLogger(__name__)
 

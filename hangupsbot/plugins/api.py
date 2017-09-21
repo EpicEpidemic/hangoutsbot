@@ -13,23 +13,23 @@ to be able to run admin commands externally
 
 More info: https://github.com/hangoutsbot/hangoutsbot/wiki/API-Plugin
 """
-import asyncio, functools, json, logging, time
-
+import asyncio
+import functools
+import json
+import logging
+import time
 from urllib.parse import unquote
 
 from aiohttp import web
-
-import plugins
-
 from sinks import aiohttp_start
 from sinks.base_bot_request_handler import AsyncRequestHandler
-
 
 logger = logging.getLogger(__name__)
 
 
 def _initialise(bot):
     _start_api(bot)
+
 
 reprocessor_queue = {}
 
@@ -82,7 +82,6 @@ class APIRequestHandler(AsyncRequestHandler):
         router.add_route("POST", "/", self.adapter_do_POST)
         router.add_route('GET', '/{api_key}/{id}/{message:.*?}', self.adapter_do_GET)
 
-
     @asyncio.coroutine
     def adapter_do_OPTIONS(self, request):
         origin = request.headers["Origin"]
@@ -108,18 +107,18 @@ class APIRequestHandler(AsyncRequestHandler):
 
     @asyncio.coroutine
     def adapter_do_GET(self, request):
-        payload = { "sendto": request.match_info["id"],
-                    "key": request.match_info["api_key"],
-                    "content": unquote(request.match_info["message"]) }
+        payload = {"sendto": request.match_info["id"],
+                   "key": request.match_info["api_key"],
+                   "content": unquote(request.match_info["message"])}
 
-        results = yield from self.process_request( '', # IGNORED
-                                                   '', # IGNORED
-                                                   payload )
+        results = yield from self.process_request('',  # IGNORED
+                                                  '',  # IGNORED
+                                                  payload)
         if results:
-            content_type="text/html"
+            content_type = "text/html"
             results = results.encode("ascii", "xmlcharrefreplace")
         else:
-            content_type="text/plain"
+            content_type = "text/plain"
             results = "OK".encode('utf-8')
 
         return web.Response(body=results, content_type=content_type)
@@ -145,8 +144,8 @@ class APIRequestHandler(AsyncRequestHandler):
     @asyncio.coroutine
     def send_actionable_message(self, id, content):
         """reprocessor: allow message to be intepreted as a command"""
-        reprocessor_context = self._bot._handlers.attach_reprocessor( handle_as_command,
-                                                                      return_as_dict=True )
+        reprocessor_context = self._bot._handlers.attach_reprocessor(handle_as_command,
+                                                                     return_as_dict=True)
         content = content + reprocessor_context["fragment"]
         reprocessor_id = reprocessor_context["id"]
 

@@ -3,11 +3,9 @@
 #
 # Author: Roman Bogorodskiy <bogorodskiy@gmail.com>
 
-import sys
-
-from urllib.request import urlopen
-from urllib.parse import quote as urlquote
 from html.parser import HTMLParser
+from urllib.parse import quote as urlquote
+from urllib.request import urlopen
 
 import plugins
 
@@ -21,7 +19,6 @@ class TermTypeRandom(TermType):
 
 
 class UrbanDictParser(HTMLParser):
-
     def __init__(self, *args, **kwargs):
         HTMLParser.__init__(self, *args, **kwargs)
         self._section = None
@@ -42,7 +39,7 @@ class UrbanDictParser(HTMLParser):
 
     def handle_endtag(self, tag):
         if tag == 'div':
-            #NOTE: assume there is no nested <div> in the known sections
+            # NOTE: assume there is no nested <div> in the known sections
             self._section = None
 
     def handle_data(self, data):
@@ -90,14 +87,16 @@ def urbandict(bot, event, *args):
         the_definition = urbanDictParser.translations[0]
         html_text += '<b>"' + the_definition["word"] + '"</b><br /><br />'
         if "def" in the_definition:
-            html_text += _("<b>definition:</b> ") + the_definition["def"].strip().replace("\n", "<br />") + '<br /><br />'
+            html_text += _("<b>definition:</b> ") + the_definition["def"].strip().replace("\n",
+                                                                                          "<br />") + '<br /><br />'
         if "example" in the_definition:
             html_text += _("<b>example:</b> ") + the_definition["example"].strip().replace("\n", "<br />")
 
         yield from bot.coro_send_message(event.conv, html_text)
     else:
         if term:
-            yield from bot.coro_send_message(event.conv, _('<i>no urban dictionary definition for "{}"</i>').format(term))
+            yield from bot.coro_send_message(event.conv,
+                                             _('<i>no urban dictionary definition for "{}"</i>').format(term))
         else:
             yield from bot.coro_send_message(event.conv, _('<i>no term from urban dictionary</i>'))
 

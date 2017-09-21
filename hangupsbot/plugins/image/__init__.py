@@ -1,17 +1,15 @@
-import re
-import logging
-
-import aiohttp
 import asyncio
 import io
+import logging
 import os
+import re
 
-
+import aiohttp
 import plugins
 
 logger = logging.getLogger(__name__)
 
-_externals = { "bot": None }
+_externals = {"bot": None}
 
 
 def _initialise(bot):
@@ -45,7 +43,8 @@ def image_validate_link(image_uri, reject_googleusercontent=True):
         """imgur links can be supplied with/without protocol and extension"""
         probable_image_link = True
 
-    elif image_uri_lower.startswith(("http://", "https://", "//")) and image_uri_lower.endswith((".png", ".gif", ".gifv", ".jpg", ".jpeg")):
+    elif image_uri_lower.startswith(("http://", "https://", "//")) and image_uri_lower.endswith(
+            (".png", ".gif", ".gifv", ".jpg", ".jpeg")):
         """other image links must have protocol and end with valid extension"""
         probable_image_link = True
 
@@ -62,11 +61,12 @@ def image_validate_link(image_uri, reject_googleusercontent=True):
             image_uri = "https://i.imgur.com/" + os.path.basename(image_uri)
 
             """imgur wraps animations in player, force the actual image resource"""
-            image_uri = image_uri.replace(".webm",".gif")
-            image_uri = image_uri.replace(".gifv",".gif")
+            image_uri = image_uri.replace(".webm", ".gif")
+            image_uri = image_uri.replace(".gifv", ".gif")
 
         elif re.match(r'^https?://gfycat.com', image_uri):
-            image_uri = re.sub(r'^https?://gfycat.com/', 'https://thumbs.gfycat.com/', image_uri) + '-size_restricted.gif'
+            image_uri = re.sub(r'^https?://gfycat.com/', 'https://thumbs.gfycat.com/',
+                               image_uri) + '-size_restricted.gif'
 
         logger.info('{} seems to be a valid image link'.format(image_uri))
 
@@ -83,7 +83,9 @@ def image_upload_single(image_uri):
         r = yield from aiohttp.request('get', image_uri)
         content_type = r.headers['Content-Type']
         if not content_type.startswith('image/') and not content_type == "application/octet-stream":
-            logger.warning("request did not return image/image-like data, content-type={}, headers={}".format(content_type, r.headers))
+            logger.warning(
+                "request did not return image/image-like data, content-type={}, headers={}".format(content_type,
+                                                                                                   r.headers))
             return False
         raw = yield from r.read()
     except (aiohttp.errors.ClientError) as exc:

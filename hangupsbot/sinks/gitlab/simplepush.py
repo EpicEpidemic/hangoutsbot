@@ -16,6 +16,7 @@ except ImportError:
     logger.error("missing module python_dateutil: pip3 install python_dateutil")
     raise
 
+
 class webhookReceiver(AsyncRequestHandler):
     """Receive REST API posts from GitLab"""
     _bot = None
@@ -44,7 +45,6 @@ class webhookReceiver(AsyncRequestHandler):
 
         message = ["GitLab update for [{}]({}) by __{}__".format(
             payload["project"]["name"], payload["project"]["web_url"], user)]
-
 
         if payload["object_kind"] == "push":
             message.append("Pushed {} commit(s) on {} branch:".format(

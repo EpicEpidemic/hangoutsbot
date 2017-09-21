@@ -1,9 +1,10 @@
-import asyncio, re, logging, json, random
+import asyncio
+import json
+import logging
+import random
 
 import hangups
-
 import plugins
-
 
 logger = logging.getLogger(__name__)
 
@@ -57,11 +58,12 @@ def _handle_autoreply(bot, event, command):
         autoreplies_list_global = bot.get_config_option('autoreplies')
 
         # If the global settings loaded from get_config_suboption then we now have them twice and don't need them, so can be ignored.
-        if autoreplies_list_global and (set([ frozenset([
-                frozenset(x) if isinstance(x, list) else x,
-                frozenset(y) if isinstance(y, list) else y ]) for x, y in autoreplies_list_global ])
-                != set([ frozenset([ frozenset(x) if isinstance(x, list) else x,
-                         frozenset(y) if isinstance(y, list) else y ]) for x, y in autoreplies_list ])):
+        if autoreplies_list_global and (set([frozenset([
+            frozenset(x) if isinstance(x, list) else x,
+            frozenset(y) if isinstance(y, list) else y]) for x, y in autoreplies_list_global])
+                                            != set([frozenset([frozenset(x) if isinstance(x, list) else x,
+                                                               frozenset(y) if isinstance(y, list) else y]) for x, y in
+                                                    autoreplies_list])):
 
             add_to_autoreplies = []
 
@@ -78,10 +80,10 @@ def _handle_autoreply(bot, event, command):
                         overlap = True
                         break
                 if not overlap:
-                    add_to_autoreplies.extend( [[kwds_gbl, sentences_gbl]] )
+                    add_to_autoreplies.extend([[kwds_gbl, sentences_gbl]])
 
             # Extend original list with non-disgarded entries.
-            autoreplies_list.extend( add_to_autoreplies )
+            autoreplies_list.extend(add_to_autoreplies)
 
     if autoreplies_list:
         for kwds, sentences in autoreplies_list:
@@ -105,14 +107,14 @@ def _handle_autoreply(bot, event, command):
 
 @asyncio.coroutine
 def send_reply(bot, event, message):
-    values = { "event": event,
-               "conv_title": bot.conversations.get_name( event.conv,
-                                                         fallback_string=_("Unidentified Conversation") )}
+    values = {"event": event,
+              "conv_title": bot.conversations.get_name(event.conv,
+                                                       fallback_string=_("Unidentified Conversation"))}
 
     if "participant_ids" in dir(event.conv_event):
-        values["participants"] = [ event.conv.get_user(user_id)
-                                   for user_id in event.conv_event.participant_ids ]
-        values["participants_namelist"] = ", ".join([ u.full_name for u in values["participants"] ])
+        values["participants"] = [event.conv.get_user(user_id)
+                                  for user_id in event.conv_event.participant_ids]
+        values["participants_namelist"] = ", ".join([u.full_name for u in values["participants"]])
 
     # tldr plugin integration: inject current conversation tldr text into auto-reply
     if '{tldr}' in message:
@@ -120,30 +122,30 @@ def send_reply(bot, event, message):
         try:
             values["tldr"] = bot.call_shared("plugin_tldr_shared", bot, args)
         except KeyError:
-            values["tldr"] = "**[TLDR UNAVAILABLE]**" # prevents exception
+            values["tldr"] = "**[TLDR UNAVAILABLE]**"  # prevents exception
             logger.warning("tldr plugin is not loaded")
             pass
 
     envelopes = []
 
     if message.startswith(("ONE_TO_ONE:", "HOST_ONE_TO_ONE")):
-        message = message[message.index(":")+1:].strip()
+        message = message[message.index(":") + 1:].strip()
         target_conv = yield from bot.get_1to1(event.user.id_.chat_id)
         if not target_conv:
-            logger.error("1-to-1 unavailable for {} ({})".format( event.user.full_name,
-                                                                  event.user.id_.chat_id ))
+            logger.error("1-to-1 unavailable for {} ({})".format(event.user.full_name,
+                                                                 event.user.id_.chat_id))
             return False
         envelopes.append((target_conv, message.format(**values)))
 
     elif message.startswith("GUEST_ONE_TO_ONE:"):
-        message = message[message.index(":")+1:].strip()
+        message = message[message.index(":") + 1:].strip()
         for guest in values["participants"]:
             target_conv = yield from bot.get_1to1(guest.id_.chat_id)
             if not target_conv:
-                logger.error("1-to-1 unavailable for {} ({})".format( guest.full_name,
-                                                                      guest.id_.chat_id ))
+                logger.error("1-to-1 unavailable for {} ({})".format(guest.full_name,
+                                                                     guest.id_.chat_id))
                 return False
-            values["guest"] = guest # add the guest as extra info
+            values["guest"] = guest  # add the guest as extra info
             envelopes.append((target_conv, message.format(**values)))
 
     else:
@@ -153,9 +155,9 @@ def send_reply(bot, event, message):
         conv_target, message = send
 
         try:
-            image_id = yield from bot.call_shared( 'image_validate_and_upload_single',
-                                                    message,
-                                                    reject_googleusercontent=False )
+            image_id = yield from bot.call_shared('image_validate_and_upload_single',
+                                                  message,
+                                                  reject_googleusercontent=False)
         except KeyError:
             logger.warning("image plugin not loaded - using in-built fallback")
             image_id = yield from image_validate_and_upload_single(message, bot)
@@ -227,6 +229,7 @@ def autoreply(bot, event, cmd=None, *args):
 
 import aiohttp, io, os, re
 
+
 def image_validate_link(image_uri, reject_googleusercontent=True):
     """
     validate and possibly mangle supplied image link
@@ -246,7 +249,8 @@ def image_validate_link(image_uri, reject_googleusercontent=True):
         """imgur links can be supplied with/without protocol and extension"""
         probable_image_link = True
 
-    elif image_uri_lower.startswith(("http://", "https://", "//")) and image_uri_lower.endswith((".png", ".gif", ".gifv", ".jpg", ".jpeg")):
+    elif image_uri_lower.startswith(("http://", "https://", "//")) and image_uri_lower.endswith(
+            (".png", ".gif", ".gifv", ".jpg", ".jpeg")):
         """other image links must have protocol and end with valid extension"""
         probable_image_link = True
 
@@ -264,14 +268,15 @@ def image_validate_link(image_uri, reject_googleusercontent=True):
             image_uri = "https://i.imgur.com/" + os.path.basename(image_uri)
 
             """imgur wraps animations in player, force the actual image resource"""
-            image_uri = image_uri.replace(".webm",".gif")
-            image_uri = image_uri.replace(".gifv",".gif")
+            image_uri = image_uri.replace(".webm", ".gif")
+            image_uri = image_uri.replace(".gifv", ".gif")
 
         logger.debug('{} seems to be a valid image link'.format(image_uri))
 
         return image_uri
 
     return False
+
 
 @asyncio.coroutine
 def image_upload_single(image_uri, bot):
@@ -282,6 +287,7 @@ def image_upload_single(image_uri, bot):
     image_data = io.BytesIO(raw)
     image_id = yield from bot._client.upload_image(image_data, filename=filename)
     return image_id
+
 
 @asyncio.coroutine
 def image_validate_and_upload_single(text, bot, reject_googleusercontent=True):

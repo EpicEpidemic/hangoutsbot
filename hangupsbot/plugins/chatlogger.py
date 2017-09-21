@@ -1,9 +1,8 @@
-import os, logging
+import logging
+import os
 
 import hangups
-
 import plugins
-
 
 logger = logging.getLogger(__name__)
 
@@ -55,13 +54,11 @@ class file_writer():
         if len(self.paths) > 0:
             self.initialised = True
 
-
     def _append_to_file(self, conversation_id, text):
         for path in self.paths:
             conversation_log = path + "/" + conversation_id + ".txt"
             with open(conversation_log, "a") as logfile:
                 logfile.write(text)
-
 
     def on_chat_message(self, bot, event, command):
         event_timestamp = event.timestamp
@@ -76,7 +73,6 @@ class file_writer():
         text = "--- {}\n{} :: {}\n{}\n".format(conversation_name, event_timestamp, user_full_name, conversation_text)
 
         self._append_to_file(conversation_id, text)
-
 
     def on_membership_change(self, bot, event, command):
         event_timestamp = event.timestamp
@@ -99,7 +95,6 @@ class file_writer():
 
         self._append_to_file(conversation_id, text)
 
-
     def on_rename(self, bot, event, command):
         event_timestamp = event.timestamp
 
@@ -110,6 +105,7 @@ class file_writer():
         user_full_name = event.user.full_name
         user_id = event.user_id
 
-        text = "--- {}\n{} :: {}\nCONVERSATION RENAMED: {}\n".format(conversation_name, event_timestamp, user_full_name, conversation_name)
+        text = "--- {}\n{} :: {}\nCONVERSATION RENAMED: {}\n".format(conversation_name, event_timestamp, user_full_name,
+                                                                     conversation_name)
 
         self._append_to_file(conversation_id, text)

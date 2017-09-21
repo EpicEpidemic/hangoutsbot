@@ -1,14 +1,12 @@
-import asyncio, logging, urllib
+import asyncio
+import logging
+import urllib
 
 import goslate
-
+import plugins
 from textblob import TextBlob
 
-import plugins
-
-
 logger = logging.getLogger(__name__)
-
 
 gs = goslate.Goslate()
 

@@ -1,8 +1,5 @@
 import logging
 
-import hangups
-
-
 logger = logging.getLogger(__name__)
 
 

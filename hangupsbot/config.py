@@ -1,13 +1,20 @@
-import collections, datetime, functools, json, glob, logging, os, shutil, sys, time
-
+import collections
+import datetime
+import functools
+import glob
+import json
+import logging
+import os
+import shutil
+import time
 from threading import Timer
-
 
 logger = logging.getLogger(__name__)
 
 
 class Config(collections.MutableMapping):
     """Configuration JSON storage class"""
+
     def __init__(self, filename, default=None, failsafe_backups=0, save_delay=0):
         self.filename = filename
         self.default = None

@@ -63,6 +63,7 @@ def forgetme(bot, event, *args):
 
 """conversation memory"""
 
+
 def rememberchat(bot, event, *args):
     """remember value for current conversation, memory must be empty.
     use /bot forgetchat to clear previous storage

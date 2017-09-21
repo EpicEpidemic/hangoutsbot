@@ -1,9 +1,12 @@
-import asyncio, datetime, logging, random, re
+import asyncio
+import datetime
+import logging
+import random
+import re
 
 import hangups
 
 bot = None
-
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +41,7 @@ def initialise_permanent_memory(bot):
 
     permamem.stats()
 
-    permamem.bot.memory.save() # only if tainted
+    permamem.bot.memory.save()  # only if tainted
 
     return permamem
 
@@ -69,7 +72,6 @@ class conversation_memory:
 
             logger.info("total users: {} cached: {} definitive (at start): {}".format(
                 count_user, count_user_cached, count_user_cached_definitive))
-
 
     @asyncio.coroutine
     def standardise_memory(self):
@@ -158,7 +160,8 @@ class conversation_memory:
                             if self.bot.memory.exists(["user_data", _chat_id, "_hangups"]):
                                 cached = self.bot.memory.get_by_path(["user_data", _chat_id, "_hangups"])
                                 if cached["is_definitive"]:
-                                    if cached["full_name"].upper() == "UNKNOWN" and cached["full_name"] == cached["first_name"]:
+                                    if cached["full_name"].upper() == "UNKNOWN" and cached["full_name"] == cached[
+                                        "first_name"]:
                                         # XXX: crappy way to detect hangups unknown users
                                         logger.debug("user {} needs refresh".format(_chat_id))
                                     else:
@@ -185,7 +188,6 @@ class conversation_memory:
             if len(_users_to_fetch) > 0:
                 yield from self.get_users_from_query(_users_to_fetch)
 
-
     @asyncio.coroutine
     def load_from_hangups(self):
         logger.info("loading {} users from hangups".format(
@@ -200,14 +202,13 @@ class conversation_memory:
         for Conversation in self.bot._conv_list.get_all():
             yield from self.update(Conversation, source="init", automatic_save=False)
 
-
     @asyncio.coroutine
     def get_users_from_query(self, chat_ids, batch_max=20):
         """retrieve definitive user data by requesting it from the server"""
 
         chat_ids = list(set(chat_ids))
 
-        chunks = [chat_ids[i:i+batch_max] for i in range(0, len(chat_ids), batch_max)]
+        chunks = [chat_ids[i:i + batch_max] for i in range(0, len(chat_ids), batch_max)]
 
         updated_users = 0
 
@@ -246,7 +247,6 @@ class conversation_memory:
 
         return updated_users
 
-
     def store_user_memory(self, User, automatic_save=True, is_definitive=False):
         """update user memory based on supplied hangups User
         conservative writing: on User attribute changes only
@@ -272,7 +272,7 @@ class conversation_memory:
         if self.bot.initialise_memory(User.id_.chat_id, "user_data"):
             changed = True
 
-        user_dict ={
+        user_dict = {
             "chat_id": User.id_.chat_id,
             "gaia_id": User.id_.gaia_id,
             "full_name": User.full_name,
@@ -280,7 +280,7 @@ class conversation_memory:
             "photo_url": User.photo_url,
             "emails": User.emails,
             "is_self": User.is_self,
-            "is_definitive": is_definitive }
+            "is_definitive": is_definitive}
 
         if cached:
             # XXX: no way to detect hangups fallback users reliably,
@@ -330,7 +330,6 @@ class conversation_memory:
 
         return changed
 
-
     @asyncio.coroutine
     def update(self, conv, source="unknown", automatic_save=True):
         """update conversation memory based on supplied hangups Conversation
@@ -349,14 +348,14 @@ class conversation_memory:
         memory = {
             "title": conv_title,
             "source": source,
-            "participants": [] }
+            "participants": []}
 
         """user list + user records writing"""
 
         memory["participants"] = []
 
-        _users_to_fetch = [] # track possible unknown users from hangups Conversation
-        users_changed = False # track whether memory["user_data"] was changed
+        _users_to_fetch = []  # track possible unknown users from hangups Conversation
+        users_changed = False  # track whether memory["user_data"] was changed
 
         for User in conv.users:
             if not User.is_self:
@@ -385,7 +384,7 @@ class conversation_memory:
         """store the conversation type: GROUP, ONE_TO_ONE"""
         if conv._conversation.type_ == hangups.schemas.ConversationType.GROUP:
             memory["type"] = "GROUP"
-        else: 
+        else:
             # conv._conversation.type_ == hangups.schemas.ConversationType.STICKY_ONE_TO_ONE
             memory["type"] = "ONE_TO_ONE"
 
@@ -414,12 +413,12 @@ class conversation_memory:
 
                     else:
                         if original[key] != memory[key]:
-                            logger.info("conv {} changed {} ({})".format(key,  conv_title, conv.id_))
+                            logger.info("conv {} changed {} ({})".format(key, conv_title, conv.id_))
                             conv_changed = True
                             break
 
                 except KeyError as e:
-                    logger.info("conv missing {} {} ({})".format(key,  conv_title, conv.id_))
+                    logger.info("conv missing {} {} ({})".format(key, conv_title, conv.id_))
                     conv_changed = True
                     break
         else:
@@ -452,7 +451,6 @@ class conversation_memory:
 
         return conv_changed or users_changed
 
-
     def remove(self, conv_id):
         if self.bot.memory.exists(["convmem", conv_id]):
             _cached = self.bot.memory.get_by_path(["convmem", conv_id])
@@ -469,7 +467,6 @@ class conversation_memory:
             logger.warning("cannot remove: {}, not found".format(conv_id))
 
         self.bot.memory.save()
-
 
     def get(self, filter=""):
         """get dictionary of conversations that matches filter term(s) (ALL if not supplied)
@@ -496,7 +493,7 @@ class conversation_memory:
                 else:
                     raise ValueError("invalid boolean operator near \"{}\"".format(raw_filter.strip()))
 
-        if raw_filter or len(terms)==0:
+        if raw_filter or len(terms) == 0:
             # second condition is to ensure at least one term, even if blank
             terms.append([operator, raw_filter])
 

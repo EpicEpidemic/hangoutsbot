@@ -1,53 +1,54 @@
 #!/usr/bin/env python3
-import appdirs, argparse, asyncio, gettext, logging, logging.config, os, shutil, signal, sys, time
-
-import hangups
-
-from hangups.schemas import OffTheRecordStatus
-
+import appdirs
+import argparse
+import asyncio
 import config
+import gettext
 import handlers
-import version
-
-import permamem
-import tagging
-
+import hangups
 import hooks
-import sinks
+import logging
+import logging.config
+import os
+import permamem
 import plugins
-
-from exceptions import HangupsBotExceptions
-from event import (TypingEvent, WatermarkEvent, ConversationEvent)
-from hangups_conversation import (HangupsConversation, FakeConversation)
-
+import shutil
+import signal
+import sinks
+import sys
+import tagging
+import time
+import version
 from commands import command
-from permamem import conversation_memory
+from event import (TypingEvent, WatermarkEvent, ConversationEvent)
+from exceptions import HangupsBotExceptions
+from hangups.schemas import OffTheRecordStatus
+from hangups_conversation import (HangupsConversation, FakeConversation)
 from utils import simple_parse_to_segments, class_from_name
 
-
 gettext.install('hangupsbot', localedir=os.path.join(os.path.dirname(__file__), 'locale'))
-
 
 logger = logging.getLogger()
 
 
 class HangupsBot(object):
     """Hangouts bot listening on all conversations"""
+
     def __init__(self, cookies_path, config_path, max_retries=5, memory_file=None):
         self.Exceptions = HangupsBotExceptions()
 
-        self.shared = {} # safe place to store references to objects
+        self.shared = {}  # safe place to store references to objects
 
         self._client = None
         self._cookies_path = cookies_path
         self._max_retries = max_retries
 
         # These are populated by on_connect when it's called.
-        self._conv_list = None # hangups.ConversationList
-        self._user_list = None # hangups.UserList
-        self._handlers = None # handlers.py::EventHandler
+        self._conv_list = None  # hangups.ConversationList
+        self._user_list = None  # hangups.UserList
+        self._handlers = None  # handlers.py::EventHandler
 
-        self._cache_event_id = {} # workaround for duplicate events
+        self._cache_event_id = {}  # workaround for duplicate events
 
         self._locales = {}
 
@@ -92,11 +93,13 @@ class HangupsBot(object):
         except NotImplementedError:
             pass
 
-
     def set_locale(self, language_code, reuse=True):
         if not reuse or language_code not in self._locales:
             try:
-                self._locales[language_code] = gettext.translation('hangupsbot', localedir=os.path.join(os.path.dirname(__file__), 'locale'), languages=[language_code])
+                self._locales[language_code] = gettext.translation('hangupsbot',
+                                                                   localedir=os.path.join(os.path.dirname(__file__),
+                                                                                          'locale'),
+                                                                   languages=[language_code])
                 logger.debug("locale loaded: {}".format(language_code))
             except OSError:
                 logger.exception("no translation for {}".format(language_code))
@@ -109,7 +112,6 @@ class HangupsBot(object):
         else:
             logger.warning("LOCALE: {}".format(language_code))
             return False
-
 
     def register_shared(self, id, objectref, forgiving=False):
         if id in self.shared:
@@ -193,7 +195,6 @@ class HangupsBot(object):
             self._client.disconnect()
         ).add_done_callback(lambda future: future.result())
 
-
     def send_message(self, conversation, text, context=None, image_id=None):
         # historical signature: conversation, text, context=None
         if context is None:
@@ -203,38 +204,35 @@ class HangupsBot(object):
             context["parser"] = False
 
         asyncio.async(
-            self.coro_send_message( conversation,
-                                    text,
-                                    context=context,
-                                    image_id=image_id )
+            self.coro_send_message(conversation,
+                                   text,
+                                   context=context,
+                                   image_id=image_id)
         ).add_done_callback(lambda future: future.result())
 
-
     def send_message_parsed(self, conversation, html, context=None, image_id=None):
-        logger.debug(  '[DEPRECATED]: yield from bot.coro_send_message()'
-                        ' instead of send_message_parsed()')
+        logger.debug('[DEPRECATED]: yield from bot.coro_send_message()'
+                     ' instead of send_message_parsed()')
 
         segments = simple_parse_to_segments(html)
 
         asyncio.async(
-            self.coro_send_message( conversation,
-                                    segments,
-                                    context=context,
-                                    image_id=image_id )
+            self.coro_send_message(conversation,
+                                   segments,
+                                   context=context,
+                                   image_id=image_id)
         ).add_done_callback(lambda future: future.result())
-
 
     def send_message_segments(self, conversation, segments, context=None, image_id=None):
-        logger.debug(  '[DEPRECATED]: yield from bot.coro_send_message()'
-                        ' instead of send_message_segments()')
+        logger.debug('[DEPRECATED]: yield from bot.coro_send_message()'
+                     ' instead of send_message_segments()')
 
         asyncio.async(
-            self.coro_send_message( conversation,
-                                    segments,
-                                    context=context,
-                                    image_id=image_id )
+            self.coro_send_message(conversation,
+                                   segments,
+                                   context=context,
+                                   image_id=image_id)
         ).add_done_callback(lambda future: future.result())
-
 
     def list_conversations(self):
         """List all active conversations"""
@@ -255,11 +253,11 @@ class HangupsBot(object):
                     missing.append(conv.id_)
 
             logger.info("list_conversations: "
-                         "{} from permamem, "
-                         "{} from hangups - "
-                         "discrepancies: {}".format( len(convs),
-                                                     len(hangups_conv_list),
-                                                     ", ".join(missing) or "none" ))
+                        "{} from permamem, "
+                        "{} from hangups - "
+                        "discrepancies: {}".format(len(convs),
+                                                   len(hangups_conv_list),
+                                                   ", ".join(missing) or "none"))
 
         except Exception as e:
             logger.exception("LIST_CONVERSATIONS: failed")
@@ -298,12 +296,12 @@ class HangupsBot(object):
                 _cached = self.memory.get_by_path(["user_data", chat_id, "_hangups"])
 
                 hangups_user = hangups.user.User(
-                    UserID, 
+                    UserID,
                     _cached["full_name"],
                     _cached["first_name"],
                     _cached["photo_url"],
                     _cached["emails"],
-                    _cached["is_self"] )
+                    _cached["is_self"])
 
         """if all else fails, create an "unknown" user"""
         if not hangups_user:
@@ -313,10 +311,9 @@ class HangupsBot(object):
                 None,
                 None,
                 [],
-                False )
+                False)
 
         return hangups_user
-
 
     def get_users_in_conversation(self, conv_ids):
         """list all unique users in supplied conv_id or list of conv_ids"""
@@ -329,7 +326,7 @@ class HangupsBot(object):
         for convid in conv_ids:
             conv_data = self.conversations.catalog[convid]
             for chat_id in conv_data["participants"]:
-                all_users[chat_id] = self.get_hangups_user(chat_id) # by key for uniqueness
+                all_users[chat_id] = self.get_hangups_user(chat_id)  # by key for uniqueness
 
         all_users = list(all_users.values())
 
@@ -414,7 +411,6 @@ class HangupsBot(object):
 
         return conversation
 
-
     @asyncio.coroutine
     def get_1to1(self, chat_id, context=None):
         """find/create a 1-to-1 conversation with specified user
@@ -425,9 +421,9 @@ class HangupsBot(object):
 
         if self.memory.exists(["user_data", chat_id, "optout"]):
             optout = self.memory.get_by_path(["user_data", chat_id, "optout"])
-            if( isinstance(optout, list)
-                    and context and 'initiator_convid' in context
-                    and context['initiator_convid'] in optout ):
+            if (isinstance(optout, list)
+                and context and 'initiator_convid' in context
+                and context['initiator_convid'] in optout):
                 logger.info("get_1on1: user {} has optout for {}".format(chat_id, context['initiator_convid']))
                 return False
             elif isinstance(optout, bool) and optout:
@@ -454,10 +450,11 @@ class HangupsBot(object):
                 try:
                     introduction = self.get_config_option('bot_introduction')
                     if not introduction:
-                        introduction =_("<i>Hi there! I'll be using this channel to send private "
-                                        "messages and alerts. "
-                                        "For help, type <b>{0} help</b>. "
-                                        "To keep me quiet, reply with <b>{0} optout</b>.</i>").format(self._handlers.bot_command[0])
+                        introduction = _("<i>Hi there! I'll be using this channel to send private "
+                                         "messages and alerts. "
+                                         "For help, type <b>{0} help</b>. "
+                                         "To keep me quiet, reply with <b>{0} optout</b>.</i>").format(
+                            self._handlers.bot_command[0])
                     response = yield from self._client.createconversation([chat_id])
                     new_conversation_id = response['conversation']['id']['id']
                     yield from self.coro_send_message(new_conversation_id, introduction)
@@ -486,7 +483,6 @@ class HangupsBot(object):
 
         return conversation
 
-
     def initialise_memory(self, chat_id, datatype):
         modified = False
 
@@ -506,7 +502,7 @@ class HangupsBot(object):
         return {
             "source": source,
             "importance": importance,
-            "tags": tags # NOT RELATED with bot.tags or tagging module
+            "tags": tags  # NOT RELATED with bot.tags or tagging module
         }
 
     def _messagecontext_legacy(self):
@@ -524,7 +520,7 @@ class HangupsBot(object):
 
         self.tags = tagging.tags(self)
         self._handlers = handlers.EventHandler(self)
-        handlers.handler.set_bot(self) # shim for handler decorator
+        handlers.handler.set_bot(self)  # shim for handler decorator
 
         plugins.load(self, "monkeypatch.otr_support")
 
@@ -551,7 +547,6 @@ class HangupsBot(object):
 
         logger.info("bot initialised")
 
-
     def _on_status_changes(self, state_update):
         if state_update.typing_notification is not None:
             asyncio.async(
@@ -567,7 +562,6 @@ class HangupsBot(object):
                 )
             ).add_done_callback(lambda future: future.result())
 
-
     @asyncio.coroutine
     def _on_event(self, conv_event):
         """Handle conversation events"""
@@ -579,7 +573,7 @@ class HangupsBot(object):
                 logger.warning("duplicate event {} ignored".format(conv_event.id_))
                 return
 
-            self._cache_event_id = {k: v for k, v in self._cache_event_id.items() if v > time.time()-3}
+            self._cache_event_id = {k: v for k, v in self._cache_event_id.items() if v > time.time() - 3}
             self._cache_event_id[conv_event.id_] = time.time()
 
             logger.info("duplicate events workaround: event id = {} timestamp = {}".format(
@@ -587,7 +581,7 @@ class HangupsBot(object):
 
         event = ConversationEvent(self, conv_event)
 
-        yield from self.conversations.update(self._conv_list.get(conv_event.conversation_id), 
+        yield from self.conversations.update(self._conv_list.get(conv_event.conversation_id),
                                              source="event")
 
         if isinstance(conv_event, hangups.ChatMessageEvent):
@@ -617,7 +611,6 @@ class HangupsBot(object):
         else:
             logger.warning("_on_event(): unrecognised event type: {}".format(type(conv_event)))
 
-
     def _execute_hook(self, funcname, parameters=None):
         for hook in self._hooks:
             method = getattr(hook, funcname, None)
@@ -634,19 +627,19 @@ class HangupsBot(object):
 
     def external_send_message(self, conversation_id, text):
         logger.warning('[DEPRECATED]: yield from bot.coro_send_message()'
-                        ' instead of external_send_message()')
+                       ' instead of external_send_message()')
 
         self.send_html_to_conversation(conversation_id, text)
 
     def external_send_message_parsed(self, conversation_id, html):
         logger.warning('[DEPRECATED]: yield from bot.coro_send_message()'
-                        ' instead of external_send_message_parsed()')
+                       ' instead of external_send_message_parsed()')
 
         self.send_html_to_conversation(conversation_id, html)
 
     def send_html_to_conversation(self, conversation_id, html, context=None):
-        logger.debug(  '[DEPRECATED]: yield from bot.coro_send_message()'
-                        ' instead of send_html_to_conversation()')
+        logger.debug('[DEPRECATED]: yield from bot.coro_send_message()'
+                     ' instead of send_html_to_conversation()')
 
         logger.info("sending message to conversation {}".format(conversation_id))
 
@@ -654,7 +647,7 @@ class HangupsBot(object):
 
     def send_html_to_user(self, user_id, html, context=None):
         logger.warning('[DEPRECATED]: yield from bot.coro_send_to_user()'
-                        ' instead of bot.send_html_to_user()')
+                       ' instead of bot.send_html_to_user()')
 
         conversation = self.get_1on1_conversation(user_id)
         if not conversation:
@@ -667,13 +660,12 @@ class HangupsBot(object):
 
     def send_html_to_user_or_conversation(self, user_id_or_conversation_id, html, context=None):
         logger.warning('[DEPRECATED] yield from bot.coro_send_message() '
-                        ' or yield from bot.coro_send_to_user()'
-                        ' instead of send_html_to_user_or_conversation()')
+                       ' or yield from bot.coro_send_to_user()'
+                       ' instead of send_html_to_user_or_conversation()')
 
         # NOTE: Assumption that a conversation_id will never match a user_id
         if not self.send_html_to_user(user_id_or_conversation_id, html, context):
             self.send_html_to_conversation(user_id_or_conversation_id, html, context)
-
 
     @asyncio.coroutine
     def coro_send_message(self, conversation, message, context=None, image_id=None):
@@ -754,12 +746,11 @@ class HangupsBot(object):
             _fc = FakeConversation(self._client, response[0])
 
             try:
-                yield from _fc.send_message( response[1],
-                                             image_id=image_id,
-                                             otr_status=otr_status )
+                yield from _fc.send_message(response[1],
+                                            image_id=image_id,
+                                            otr_status=otr_status)
             except hangups.NetworkError as e:
                 logger.exception("CORO_SEND_MESSAGE: error sending {}".format(response[0]))
-
 
     @asyncio.coroutine
     def coro_send_to_user(self, chat_id, html, context=None):
@@ -787,7 +778,6 @@ class HangupsBot(object):
 
         return True
 
-
     @asyncio.coroutine
     def coro_send_to_user_and_conversation(self, chat_id, conv_id, html_private, html_public=False, context=None):
         """
@@ -802,9 +792,10 @@ class HangupsBot(object):
 
         responses = {
             "standard":
-                False, # no public messages
+                False,  # no public messages
             "optout":
-                _("<i>{}, you are currently opted-out. Private message me or enter <b>{} optout</b> to get me to talk to you.</i>")
+                _(
+                    "<i>{}, you are currently opted-out. Private message me or enter <b>{} optout</b> to get me to talk to you.</i>")
                     .format(full_name, min(self._handlers.bot_command, key=len)),
             "no1to1":
                 _("<i>{}, before I can help you, you need to private message me and say hi.</i>")
@@ -841,7 +832,6 @@ class HangupsBot(object):
         if public_message:
             yield from self.coro_send_message(conv_id, public_message, context=context)
 
-
     def user_self(self):
         myself = {
             "chat_id": None,
@@ -856,6 +846,7 @@ class HangupsBot(object):
         if User.emails and User.emails[0]: myself["email"] = User.emails[0]
 
         return myself
+
 
 def configure_logging(args):
     """Configure Logging
@@ -875,35 +866,35 @@ def configure_logging(args):
             'console': {
                 'format': '%(asctime)s %(levelname)s %(name)s: %(message)s',
                 'datefmt': '%H:%M:%S'
-                },
+            },
             'default': {
                 'format': '%(asctime)s %(levelname)s %(name)s: %(message)s',
                 'datefmt': '%Y-%m-%d %H:%M:%S'
-                }
-            },
+            }
+        },
         'handlers': {
             'console': {
                 'class': 'logging.StreamHandler',
                 'stream': 'ext://sys.stdout',
                 'level': 'INFO',
                 'formatter': 'console'
-                },
+            },
             'file': {
                 'class': 'logging.FileHandler',
                 'filename': args.log,
                 'level': log_level,
                 'formatter': 'default',
-                }
-            },
+            }
+        },
         'loggers': {
             # root logger
             '': {
                 'handlers': ['file', 'console'],
                 'level': log_level
-                },
+            },
 
             # requests is freakishly noisy
-            'requests': { 'level': 'INFO'},
+            'requests': {'level': 'INFO'},
 
             # XXX: suppress erroneous WARNINGs until resolution of
             #   https://github.com/tdryer/hangups/issues/142
@@ -914,8 +905,8 @@ def configure_logging(args):
 
             # hangups log is verbose too, suppress so we can debug the bot
             'hangups.conversation': {'level': 'ERROR'}
-            }
         }
+    }
 
     logging_config = default_config
 
@@ -974,8 +965,6 @@ def main():
     parser.add_argument('--version', action='version', version='%(prog)s {}'.format(version.__version__),
                         help=_('show program\'s version number and exit'))
     args = parser.parse_args()
-
-    
 
     # Create all necessary directories.
     for path in [args.log, args.cookies, args.config, args.memory]:

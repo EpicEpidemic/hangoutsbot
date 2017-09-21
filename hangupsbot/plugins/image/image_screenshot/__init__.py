@@ -1,19 +1,19 @@
-import asyncio, io, logging, os, re, time, tempfile
-
-import selenium
-
-from selenium import webdriver
-
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+import asyncio
+import io
+import logging
+import os
+import re
+import tempfile
+import time
 
 import plugins
-
+import selenium
+from selenium import webdriver
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 logger = logging.getLogger(__name__)
 
-
-_externals = { "running": False }
-
+_externals = {"running": False}
 
 dcap = dict(DesiredCapabilities.PHANTOMJS)
 dcap["phantomjs.page.settings.userAgent"] = (
@@ -95,22 +95,24 @@ def screenshot(bot, event, *args):
         url = bot.conversation_memory_get(event.conv_id, 'url')
 
     if url is None:
-        html = "<i><b>{}</b> No URL has been set for screenshots and none was provided manually.".format(event.user.full_name)
+        html = "<i><b>{}</b> No URL has been set for screenshots and none was provided manually.".format(
+            event.user.full_name)
         yield from bot.coro_send_message(event.conv, html)
 
     else:
         _externals["running"] = True
-        
+
         if not re.match(r'^[a-zA-Z]+://', url):
             url = 'http://' + url
-        filename = event.conv_id + "." + str(time.time()) +".png"
+        filename = event.conv_id + "." + str(time.time()) + ".png"
         filepath = tempfile.NamedTemporaryFile(prefix=event.conv_id, suffix=".png", delete=False).name
         logger.debug("temporary screenshot file: {}".format(filepath))
 
         try:
-            browser = webdriver.PhantomJS(desired_capabilities=dcap,service_log_path=os.path.devnull)
+            browser = webdriver.PhantomJS(desired_capabilities=dcap, service_log_path=os.path.devnull)
         except selenium.common.exceptions.WebDriverException as e:
-            yield from bot.coro_send_message(event.conv, "<i>phantomjs could not be started - is it installed?</i>".format(e))
+            yield from bot.coro_send_message(event.conv,
+                                             "<i>phantomjs could not be started - is it installed?</i>".format(e))
             _externals["running"] = False
             return
 
@@ -122,7 +124,7 @@ def screenshot(bot, event, *args):
             logger.exception("screencap failed".format(url))
             _externals["running"] = False
             return
-            
+
         try:
             try:
                 image_id = yield from bot.call_shared('image_upload_raw', image_data, filename=filename)

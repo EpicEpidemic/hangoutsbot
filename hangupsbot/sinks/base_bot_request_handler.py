@@ -1,5 +1,10 @@
-import asyncio, base64, io, imghdr, json, logging, time
-
+import asyncio
+import base64
+import imghdr
+import io
+import json
+import logging
+import time
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -9,13 +14,12 @@ logger = logging.getLogger(__name__)
 
 
 class BaseBotRequestHandler(BaseHTTPRequestHandler):
-    _bot = None # set externally by the hangupsbot sink loader
+    _bot = None  # set externally by the hangupsbot sink loader
     sinkname = "UNKNOWN"
 
     def __init__(self, *args):
         self.sinkname = self.__class__.__name__
         BaseHTTPRequestHandler.__init__(self, *args)
-
 
     def do_POST(self):
         """handle incoming POST request
@@ -47,7 +51,6 @@ class BaseBotRequestHandler(BaseHTTPRequestHandler):
 
         except Exception as e:
             logger.exception(e)
-
 
     @asyncio.coroutine
     def process_request(self, path, query_string, content):
@@ -92,7 +95,6 @@ class BaseBotRequestHandler(BaseHTTPRequestHandler):
 
         yield from self.send_data(conversation_id, text, image_data=image_data, image_filename=image_filename)
 
-
     @asyncio.coroutine
     def send_data(self, conversation_id, text, image_data=None, image_filename=None, context=None):
         """sends text and/or image to a conversation
@@ -113,23 +115,22 @@ class BaseBotRequestHandler(BaseHTTPRequestHandler):
 
         yield from self._bot.coro_send_message(conversation_id, text, context=context, image_id=image_id)
 
-
     def log_error(self, format_string, *args):
-        logger.error("{} - {} {}".format(self.sinkname, self.address_string(), format_string%args))
+        logger.error("{} - {} {}".format(self.sinkname, self.address_string(), format_string % args))
 
     def log_message(self, format_string, *args):
-        logger.info("{} - {} {}".format(self.sinkname, self.address_string(), format_string%args))
+        logger.info("{} - {} {}".format(self.sinkname, self.address_string(), format_string % args))
 
 
 class AsyncRequestHandler:
     bot = None
-    _bot = None # ensure backward compatibility for legacy subclasses
+    _bot = None  # ensure backward compatibility for legacy subclasses
 
     def __init__(self, *args):
         self.sinkname = self.__class__.__name__
-        if(args[0]):
+        if (args[0]):
             self.bot = args[0]
-            self._bot = self.bot # backward-compatibility
+            self._bot = self.bot  # backward-compatibility
 
     def addroutes(self, router):
         router.add_route("POST", "/{convid}", self.adapter_do_POST)
@@ -139,15 +140,15 @@ class AsyncRequestHandler:
     def adapter_do_POST(self, request):
         raw_content = yield from request.content.read()
 
-        results = yield from self.process_request( request.path,
-                                                   parse_qs(request.query_string),
-                                                   raw_content.decode("utf-8") )
+        results = yield from self.process_request(request.path,
+                                                  parse_qs(request.query_string),
+                                                  raw_content.decode("utf-8"))
 
         if results:
-            content_type="text/html"
+            content_type = "text/html"
             results = results.encode("ascii", "xmlcharrefreplace")
         else:
-            content_type="text/plain"
+            content_type = "text/plain"
             results = "OK".encode('utf-8')
 
         return web.Response(body=results, content_type=content_type)

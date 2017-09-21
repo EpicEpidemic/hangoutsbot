@@ -1,7 +1,7 @@
-import wikipedia
 import re
 
 import plugins
+import wikipedia
 
 
 def wiki(bot, event, *args):

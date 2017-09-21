@@ -2,12 +2,13 @@ import logging
 
 import plugins
 
-
 logger = logging.getLogger(__name__)
 
 
 def _initialise(bot):
-    plugins.register_admin_command(["dumpconv", "dumpunknownusers", "resetunknownusers", "refreshusermemory", "removeconvrecord", "makeallusersindefinite"])
+    plugins.register_admin_command(
+        ["dumpconv", "dumpunknownusers", "resetunknownusers", "refreshusermemory", "removeconvrecord",
+         "makeallusersindefinite"])
 
 
 def dumpconv(bot, event, *args):
@@ -18,7 +19,8 @@ def dumpconv(bot, event, *args):
     for convid, convdata in all_conversations:
         if text_search.lower() in convdata["title"].lower():
             lines.append("`{}` <em>{}</em> {}<br />... `{}` history: {} <br />... <b>{}</b>".format(
-                convid, convdata["source"], len(convdata["participants"]), convdata["type"], convdata["history"], convdata["title"]))
+                convid, convdata["source"], len(convdata["participants"]), convdata["type"], convdata["history"],
+                convdata["title"]))
     lines.append("<b><em>Totals: {}/{}</em></b>".format(len(lines), len(all_conversations)))
     yield from bot.coro_send_message(event.conv, "<br />".join(lines))
 

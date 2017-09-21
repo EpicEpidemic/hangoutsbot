@@ -1,9 +1,8 @@
-import aiohttp, asyncio, json, logging, requests
-
-import plugins
-
+import aiohttp
+import asyncio
+import json
+import logging
 from webbridge import WebFramework, IncomingRequestHandler
-
 
 logger = logging.getLogger(__name__)
 
@@ -24,12 +23,12 @@ class BridgeInstance(WebFramework):
         user_id = event.user_id
 
         url = config["HUBOT_URL"] + conversation_id
-        payload = {"from" : str(user_id.chat_id), "message" : conversation_text}
+        payload = {"from": str(user_id.chat_id), "message": conversation_text}
         headers = {'content-type': 'application/json'}
 
         connector = aiohttp.TCPConnector(verify_ssl=False)
         asyncio.async(
-            aiohttp.request('post', url, data = json.dumps(payload), headers = headers, connector=connector)
+            aiohttp.request('post', url, data=json.dumps(payload), headers=headers, connector=connector)
         ).add_done_callback(lambda future: future.result())
 
 
@@ -49,4 +48,3 @@ class IncomingMessages(IncomingRequestHandler):
 
 def _initialise(bot):
     BridgeInstance(bot, "hubot", IncomingMessages)
-

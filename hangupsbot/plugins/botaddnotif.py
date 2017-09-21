@@ -6,11 +6,14 @@ Author: @cd334
 """
 
 import asyncio
+
 import hangups
 import plugins
 
+
 def _initialise(bot):
     plugins.register_handler(_handle_join_notify, type="membership")
+
 
 @asyncio.coroutine
 def _handle_join_notify(bot, event, command):

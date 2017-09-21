@@ -1,13 +1,15 @@
-import asyncio, inspect, logging, sys
-
-# hangups-specific imports
-
-import json, random
+import asyncio
+import inspect
+import json
+import logging
+import random
+import sys
 
 from hangups import exceptions
 from hangups.client import Client as class_hangups_client
 from hangups.schemas import OffTheRecordStatus
 
+# hangups-specific imports
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +29,7 @@ def replace_method(the_class, class_method_name, new_method):
     old_signature = set(inspect.signature(class_method).parameters)
     new_signature = set(inspect.signature(new_method).parameters)
 
-    if old_signature < new_signature: # only patch if SUBSET of parameters
+    if old_signature < new_signature:  # only patch if SUBSET of parameters
         setattr(the_class, class_method_name, new_method)
         logger.info("{} replaced with {}".format(class_method_name, new_method.__name__))
 
@@ -35,7 +37,7 @@ def replace_method(the_class, class_method_name, new_method):
 @asyncio.coroutine
 def otr_monkeypatch_removeuser(self, conversation_id, otr_status=None):
     if otr_status is None:
-        otr_status = OffTheRecordStatus.ON_THE_RECORD # default
+        otr_status = OffTheRecordStatus.ON_THE_RECORD  # default
         try:
             if not bot.conversations.catalog[conversation_id]["history"]:
                 otr_status = OffTheRecordStatus.OFF_THE_RECORD
@@ -49,7 +51,7 @@ def otr_monkeypatch_removeuser(self, conversation_id, otr_status=None):
     conversation_id must be a valid conversation ID.
     Raises hangups.NetworkError if the request fails.
     """
-    client_generated_id = random.randint(0, 2**32)
+    client_generated_id = random.randint(0, 2 ** 32)
     res = yield from self._request('conversations/removeuser', [
         self._get_request_header(),
         None, None, None,
@@ -67,7 +69,7 @@ def otr_monkeypatch_removeuser(self, conversation_id, otr_status=None):
 @asyncio.coroutine
 def otr_monkeypatched_adduser(self, conversation_id, chat_id_list, otr_status=None):
     if otr_status is None:
-        otr_status = OffTheRecordStatus.ON_THE_RECORD # default
+        otr_status = OffTheRecordStatus.ON_THE_RECORD  # default
         try:
             if not bot.conversations.catalog[conversation_id]["history"]:
                 otr_status = OffTheRecordStatus.OFF_THE_RECORD
@@ -82,7 +84,7 @@ def otr_monkeypatched_adduser(self, conversation_id, chat_id_list, otr_status=No
     chat_id_list is list of users which should be invited to conversation.
     Raises hangups.NetworkError if the request fails.
     """
-    client_generated_id = random.randint(0, 2**32)
+    client_generated_id = random.randint(0, 2 ** 32)
     body = [
         self._get_request_header(),
         None,

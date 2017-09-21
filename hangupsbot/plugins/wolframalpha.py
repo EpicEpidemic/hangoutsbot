@@ -8,9 +8,10 @@ instructions:
 * put API KEY in config.json:wolframalpha-apikey
 """
 
-import wolframalpha
-import plugins
 import logging
+
+import plugins
+import wolframalpha
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ def ask(bot, event, *args):
 
     if not len(args):
         yield from bot.coro_send_message(event.conv,
-                _("You need to ask WolframAlpha a question"))
+                                         _("You need to ask WolframAlpha a question"))
         return
 
     keyword = ' '.join(args)

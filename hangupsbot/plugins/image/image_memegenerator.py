@@ -1,14 +1,15 @@
-import aiohttp, logging, json, os, random, urllib.request
-
+import aiohttp
 import hangups
-
+import json
+import logging
+import os
 import plugins
-
+import random
+import urllib.request
 
 logger = logging.getLogger(__name__)
 
-
-_externals = { "running": False }
+_externals = {"running": False}
 
 
 def _initialise(bot):
@@ -30,7 +31,8 @@ def meme(bot, event, *args):
             parameters.append("robot")
 
         """public api: http://version1.api.memegenerator.net"""
-        url_api = 'http://version1.api.memegenerator.net/Instances_Search?q=' + "+".join(parameters) + '&pageIndex=0&pageSize=25'
+        url_api = 'http://version1.api.memegenerator.net/Instances_Search?q=' + "+".join(
+            parameters) + '&pageIndex=0&pageSize=25'
 
         api_request = yield from aiohttp.request('get', url_api)
         json_results = yield from api_request.read()
@@ -41,9 +43,9 @@ def meme(bot, event, *args):
 
             image_data = urllib.request.urlopen(instanceImageUrl)
             filename = os.path.basename(instanceImageUrl)
-            legacy_segments = [hangups.ChatMessageSegment( instanceImageUrl,
-                                                           hangups.SegmentType.LINK,
-                                                           link_target = instanceImageUrl )]
+            legacy_segments = [hangups.ChatMessageSegment(instanceImageUrl,
+                                                          hangups.SegmentType.LINK,
+                                                          link_target=instanceImageUrl)]
             logger.debug("uploading {} from {}".format(filename, instanceImageUrl))
 
             try:

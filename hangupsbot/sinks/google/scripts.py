@@ -1,7 +1,8 @@
-import asyncio, json, logging
+import asyncio
+import json
+import logging
 
 from sinks.base_bot_request_handler import AsyncRequestHandler
-
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,6 @@ class webhookReceiver(AsyncRequestHandler):
             return
 
         yield from self.send_actionable_message(conv_or_user_id, payload["message"])
-
 
     @asyncio.coroutine
     def send_actionable_message(self, id, content):

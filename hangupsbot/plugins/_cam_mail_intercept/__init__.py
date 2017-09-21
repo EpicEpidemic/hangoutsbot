@@ -17,8 +17,6 @@ Please make sure this file gets copied into your hangoutsbot/hangupsbot/plugins 
 infradom
 """
 
-
-
 """
 # synology startup script: /etc/init/hangoutsbot.conf
 #
@@ -38,8 +36,6 @@ setuid botty
 exec /usr/bin/python3 /volume1/homes/botty/hangoutsbot/hangupsbot/hangupsbot.py
 
 """
-
-
 
 """
 config.json entries used by this plugin
@@ -62,14 +58,13 @@ config.json entries used by this plugin
                       }
 """
 
-
-import hangups
-import logging
-import plugins
 import asyncio
-import threading
-import socket
 import io
+import logging
+import socket
+import threading
+
+import plugins
 
 logger = logging.getLogger(__name__)
 
@@ -79,28 +74,28 @@ mainloop = asyncio.get_event_loop()
 
 
 def _initialise(bot):
-    global EXTSMTPUSER,EXTSMTPPWD,EXTSMTPSERVER,EXTSMTPPORT,INTSMTPADDRESS,INTSMTPPORT
+    global EXTSMTPUSER, EXTSMTPPWD, EXTSMTPSERVER, EXTSMTPPORT, INTSMTPADDRESS, INTSMTPPORT
     global CAMMAILCID
-    global ALARMSYSURL,ALARMSYSUSR,ALARMSYSPWD,ALARMNOTURL,ALARMSUBJECTFORMAT,ALARMSYSOFFREGEXP
-    global CAMPWD,CAMUSR,CAMURLS
+    global ALARMSYSURL, ALARMSYSUSR, ALARMSYSPWD, ALARMNOTURL, ALARMSUBJECTFORMAT, ALARMSYSOFFREGEXP
+    global CAMPWD, CAMUSR, CAMURLS
     try:
-        EXTSMTPUSER       = bot.get_config_option("extsmtpuser") or None
-        EXTSMTPPWD        = bot.get_config_option("extsmtppwd") or None
-        EXTSMTPSERVER     = bot.get_config_option("extsmtpserver") or "smtp.gmail.com"
-        EXTSMTPPORT       = bot.get_config_option("extsmtpport") or "587"
-        INTSMTPADDRESS    = bot.get_config_option("intsmtpaddress") or socket.gethostname()
-        INTSMTPPORT       = int(bot.get_config_option("intsmtpport") or "10025")
-        CAMMAILCID        = bot.get_config_option("cammailCID") or None
-        ALARMSYSURL       = bot.get_config_option("alarmsysurl") or None
-        ALARMSYSUSR       = bot.get_config_option("alarmsysusr") or None
-        ALARMSYSPWD       = bot.get_config_option("alarmsyspwd") or None
-        ALARMNOTURL       = bot.get_config_option("alarmnoturl") or None
+        EXTSMTPUSER = bot.get_config_option("extsmtpuser") or None
+        EXTSMTPPWD = bot.get_config_option("extsmtppwd") or None
+        EXTSMTPSERVER = bot.get_config_option("extsmtpserver") or "smtp.gmail.com"
+        EXTSMTPPORT = bot.get_config_option("extsmtpport") or "587"
+        INTSMTPADDRESS = bot.get_config_option("intsmtpaddress") or socket.gethostname()
+        INTSMTPPORT = int(bot.get_config_option("intsmtpport") or "10025")
+        CAMMAILCID = bot.get_config_option("cammailCID") or None
+        ALARMSYSURL = bot.get_config_option("alarmsysurl") or None
+        ALARMSYSUSR = bot.get_config_option("alarmsysusr") or None
+        ALARMSYSPWD = bot.get_config_option("alarmsyspwd") or None
+        ALARMNOTURL = bot.get_config_option("alarmnoturl") or None
         ALARMSYSOFFREGEXP = re.compile(str(bot.get_config_option("alarmsysoffregexp"))) or None
-        s = bot.get_config_option("alarmsubjectformat") or { "regexp": r"(.*) (.*)( .*)*", "locationindex": 2 }
-        ALARMSUBJECTFORMAT= { "regexp" : re.compile(s["regexp"]), "locationindex": s["locationindex"] }
-        CAMPWD            = bot.get_config_option("campwd") or None
-        CAMUSR            = bot.get_config_option("camusr") or None
-        CAMURLS           = bot.get_config_option("camurls") or {}
+        s = bot.get_config_option("alarmsubjectformat") or {"regexp": r"(.*) (.*)( .*)*", "locationindex": 2}
+        ALARMSUBJECTFORMAT = {"regexp": re.compile(s["regexp"]), "locationindex": s["locationindex"]}
+        CAMPWD = bot.get_config_option("campwd") or None
+        CAMUSR = bot.get_config_option("camusr") or None
+        CAMURLS = bot.get_config_option("camurls") or {}
     except:
         logger.exception("missing config file entry")
         return
@@ -109,7 +104,7 @@ def _initialise(bot):
     mybot = bot
     # spawn a separate thread for the mail server
     # hoping asyncore and asyncio do not fight
-    t = threading.Thread(target = smtpthread)
+    t = threading.Thread(target=smtpthread)
     t.daemon = True
     t.start()
     plugins.register_user_command(["interceptCamMail"])
@@ -118,11 +113,13 @@ def _initialise(bot):
 
 """ intercept cam mail for this conversation
     replaces previous conversation. Can only support one conversation for now """
+
+
 def interceptCamMail(bot, event, *args):
     global CAMMAILCID
     print(event.conv_id)
     bot.config.set_by_path(["cammailCID"], event.conv_id)
-    CAMMAILCID =  event.conv_id
+    CAMMAILCID = event.conv_id
     yield from bot.coro_send_message(event.conv, "<i>This conversation will receive cammail notifications</i>")
 
 
@@ -131,9 +128,10 @@ def my_message(loop, item):
     count = 0
     for i in item["img"]:
         image_id = yield from mybot._client.upload_image(io.BytesIO(i), filename=item["filename"][count])
-        yield from mybot.coro_send_message( CAMMAILCID, None, image_id=image_id)
-        count +=1
-    yield from mybot.coro_send_message( CAMMAILCID, item["content"], image_id=None)
+        yield from mybot.coro_send_message(CAMMAILCID, None, image_id=image_id)
+        count += 1
+    yield from mybot.coro_send_message(CAMMAILCID, item["content"], image_id=None)
+
 
 @asyncio.coroutine
 def _handle_incoming_message(bot, event, command):
@@ -143,7 +141,7 @@ def _handle_incoming_message(bot, event, command):
     if camurl:
         image_data = requests.get(camurl, auth=HTTPBasicAuth(CAMUSR, CAMPWD))
         logger.info('image data len: ' + str(len(image_data.content)))
-        image_id = yield from bot._client.upload_image(io.BytesIO(image_data.content), filename=txt+'.jpg')
+        image_id = yield from bot._client.upload_image(io.BytesIO(image_data.content), filename=txt + '.jpg')
         yield from bot.coro_send_message(event.conv.id_, None, image_id=image_id)
 
 
@@ -155,35 +153,33 @@ So lets run it in a separate thread for the time being.
 import smtpd
 import asyncore
 
-import os
 import re
-import sys
-import json
 import email
-import base64
-import errno
-import mimetypes
 import smtplib
 import requests
 from requests.auth import HTTPBasicAuth
-from email.mime.text import MIMEText
 from email.header import decode_header
-
 
 
 def interceptMail(maildata):
     logger.info("in interceptMail")
     msg = email.message_from_string(maildata)
     subject = msg['Subject']
-    if subject: subject = decode_header(subject)[0][0].decode()
-    else: subject = ""
+    if subject:
+        subject = decode_header(subject)[0][0].decode()
+    else:
+        subject = ""
     mo = re.match(ALARMSUBJECTFORMAT["regexp"], subject)
-    if mo: location= mo.group(ALARMSUBJECTFORMAT["locationindex"])
-    else: location = ""
+    if mo:
+        location = mo.group(ALARMSUBJECTFORMAT["locationindex"])
+    else:
+        location = ""
     # notify alarm system in all cases
     if ALARMNOTURL and (location in CAMURLS):
-        try: r = requests.get(ALARMNOTURL % {'location': location }, auth=HTTPBasicAuth(ALARMSYSUSR, ALARMSYSPWD))
-        except: logger.exception('cannot notify alarm system')
+        try:
+            r = requests.get(ALARMNOTURL % {'location': location}, auth=HTTPBasicAuth(ALARMSYSUSR, ALARMSYSPWD))
+        except:
+            logger.exception('cannot notify alarm system')
     # do not chat if alarm system is not active
     if ALARMSYSURL:
         try:
@@ -191,16 +187,19 @@ def interceptMail(maildata):
             if ALARMSYSOFFREGEXP and ALARMSYSOFFREGEXP.search(r.text):
                 logger.info("ignoring alarm, alarm system not active")
                 return True
-        except: logger.exception('cannot talk to alarm system url')
+        except:
+            logger.exception('cannot talk to alarm system url')
     item = {"filename": [], "img": [], "content": subject}
     counter = 0
     for part in msg.walk():
-        counter +=1
+        counter += 1
         # multipart/* are just containers
         if part.get_content_maintype() == 'multipart': continue
         typ = part.get_content_type()
-        if part.get_filename("xxx").startswith('=?'): filename = decode_header(part.get_filename())[0][0].decode()
-        else: filename = part.get_filename("xxx")
+        if part.get_filename("xxx").startswith('=?'):
+            filename = decode_header(part.get_filename())[0][0].decode()
+        else:
+            filename = part.get_filename("xxx")
         logger.info('content type: ' + typ + ' filename: ' + filename)
         if (typ == 'text/plain'):
             body = part.get_payload(decode=False)
@@ -209,16 +208,17 @@ def interceptMail(maildata):
             img = part.get_payload(decode=True)
             item["filename"].append(filename)
             item["img"].append(img)
-            item["content"] = subject # remove body if there is an image - an image says more than 1000 words
-            logger.info('feeding image data into bot - size: ' + str(len(img)) )
-    try: task = asyncio.async(my_message(mainloop, item), loop=mainloop) # will become mainloop.create_task
-    except: logger.exception('cannot post into bot')
+            item["content"] = subject  # remove body if there is an image - an image says more than 1000 words
+            logger.info('feeding image data into bot - size: ' + str(len(img)))
+    try:
+        task = asyncio.async(my_message(mainloop, item), loop=mainloop)  # will become mainloop.create_task
+    except:
+        logger.exception('cannot post into bot')
     forward = True
     return forward
 
 
 class CustomSMTPServer(smtpd.SMTPServer):
-
     def process_message(self, peer, mailfrom, rcpttos, data):
         logger.info("mail received from :" + mailfrom + " to: " + str(rcpttos))
         # analyze and intercept mail
@@ -226,15 +226,16 @@ class CustomSMTPServer(smtpd.SMTPServer):
         # Forward the message to provider SMTP server if required.
         if forward:
             logger.info("forward mail received from :" + mailfrom + " to: " + str(rcpttos))
-            s = smtplib.SMTP(EXTSMTPSERVER,EXTSMTPPORT)
+            s = smtplib.SMTP(EXTSMTPSERVER, EXTSMTPPORT)
             s.ehlo()
             s.starttls()
             s.ehlo()
-            s.login(EXTSMTPUSER,EXTSMTPPWD)
-            #s.set_debuglevel(1)
-            s.sendmail(mailfrom,rcpttos, data)
+            s.login(EXTSMTPUSER, EXTSMTPPWD)
+            # s.set_debuglevel(1)
+            s.sendmail(mailfrom, rcpttos, data)
             s.close()
         return
+
 
 def smtpthread():
     logger.info("within smtpd thread")

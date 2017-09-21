@@ -3,16 +3,15 @@
 import asyncio
 import datetime
 import logging
-import plugins
 import pprint
 import random
 
-import hangups
-
+import plugins
 
 logger = logging.getLogger(__name__)
 
 _monitored = {}
+
 
 def _initialise(bot):
     if not bot.get_config_option("botalive"):
@@ -23,9 +22,9 @@ def _initialise(bot):
     plugins.start_asyncio_task(_tick)
 
     # track events that can modify the watermark
-    watch_event_types = [ "message",
-                          "membership",
-                          "rename" ]
+    watch_event_types = ["message",
+                         "membership",
+                         "rename"]
     for event_type in watch_event_types:
         plugins.register_handler(_conv_external_event, event_type)
 
@@ -48,9 +47,9 @@ def _conv_external_event(bot, event, command):
     conv_id = event.conv_id
 
     # only track events in conversations that were previously registered by _tick()
-    if conv_id in _monitored: # otherwise, this will track events in ALL conversations
+    if conv_id in _monitored:  # otherwise, this will track events in ALL conversations
         _conv_monitor(bot, conv_id,
-            overrides={ 'last_external_event': datetime.datetime.now().timestamp() })
+                      overrides={'last_external_event': datetime.datetime.now().timestamp()})
 
 
 def _conv_monitor(bot, conv_id, overrides={}):
@@ -61,10 +60,10 @@ def _conv_monitor(bot, conv_id, overrides={}):
     if conv_id in bot.memory["convmem"]:
         if conv_id not in _monitored:
             # initialise monitoring
-            _monitored[conv_id] = { 'errors': [],
-                                    'interval_watermark': 3600,
-                                    'last_external_event': False,
-                                    'last_watermark': False }
+            _monitored[conv_id] = {'errors': [],
+                                   'interval_watermark': 3600,
+                                   'last_external_event': False,
+                                   'last_watermark': False}
         for key, val in overrides.items():
             _monitored[conv_id][key] = val
 
@@ -101,7 +100,7 @@ def _tick(bot):
         #   UNSET/FALSE to disable watermarking for admin 1-to-1s
         if "admins" in config_botalive:
             if config_botalive["admins"] < 60:
-                config_botalive["admins"] = 60 # minimum: once per minute
+                config_botalive["admins"] = 60  # minimum: once per minute
 
             # most efficient way to add admin one-to-ones
             admins = bot.get_config_option('admins')
@@ -109,18 +108,18 @@ def _tick(bot):
                 if bot.memory.exists(["user_data", admin, "1on1"]):
                     conv_id = bot.memory.get_by_path(["user_data", admin, "1on1"])
                     _conv_monitor(bot, conv_id,
-                        overrides={ "interval_watermark": config_botalive["admins"] })
+                                  overrides={"interval_watermark": config_botalive["admins"]})
 
         # botalive.admins = minimum amount of <seconds> between watermark updates for groups
         #   UNSET/FALSE to disable watermarking for groups
         if "groups" in config_botalive:
             if config_botalive["groups"] < 60:
-                config_botalive["groups"] = 60 # minimum: once per minute
+                config_botalive["groups"] = 60  # minimum: once per minute
 
             # leverage in-built functionality to retrieve group conversations
             for conv_id, conv_data in bot.conversations.get("type:group").items():
                 _conv_monitor(bot, conv_id,
-                    overrides={ "interval_watermark": config_botalive["groups"] })
+                              overrides={"interval_watermark": config_botalive["groups"]})
 
         for conv_id, conv_state in _monitored.items():
             now = datetime.datetime.now().timestamp()
@@ -128,28 +127,28 @@ def _tick(bot):
             """devnote: separation of verbose logic for clarity - watermark IF:
             * conversation not watermarked before (after bot restart), OR
             * non-bot event moves the bot watermark behind, and configured interval has passed"""
-            do_watermark = ( conv_state['last_watermark'] is False
-                             or ( conv_state["last_external_event"] is not False
-                                  and conv_state["last_external_event"] > conv_state['last_watermark']
-                                  and conv_state['last_watermark'] + conv_state['interval_watermark'] < now ))
+            do_watermark = (conv_state['last_watermark'] is False
+                            or (conv_state["last_external_event"] is not False
+                                and conv_state["last_external_event"] > conv_state['last_watermark']
+                                and conv_state['last_watermark'] + conv_state['interval_watermark'] < now))
 
             if do_watermark and len(conv_state['errors']) < config_botalive['permafail']:
                 try:
                     _timestamp = yield from _conv_watermark_now(bot, conv_id)
                     _conv_monitor(bot, conv_id,
-                        overrides={ "errors": [], "last_watermark": _timestamp })
+                                  overrides={"errors": [], "last_watermark": _timestamp})
                     watermarked.append(conv_id)
 
                 except Exception as e:
                     text_exception = str(e)
                     conv_state["errors"].append(text_exception)
                     _conv_monitor(bot, conv_id,
-                        overrides={ "errors": conv_state["errors"] })
+                                  overrides={"errors": conv_state["errors"]})
                     failed.append(conv_id)
                     if text_exception in errors:
                         errors[text_exception].append(conv_id)
                     else:
-                        errors[text_exception] =  [conv_id]
+                        errors[text_exception] = [conv_id]
 
                 if config_botalive['maxfuzz']:
                     pause = random.randint(3, config_botalive['maxfuzz'])
@@ -158,9 +157,9 @@ def _tick(bot):
                 yield from asyncio.sleep(pause)
 
         if watermarked or failed or errors:
-            logger.info("success: {}, failed: {}, unique errors: {}".format( len(watermarked),
-                                                                             len(failed),
-                                                                             list(errors.keys()) ))
+            logger.info("success: {}, failed: {}, unique errors: {}".format(len(watermarked),
+                                                                            len(failed),
+                                                                            list(errors.keys())))
 
         yield from asyncio.sleep(60)
 

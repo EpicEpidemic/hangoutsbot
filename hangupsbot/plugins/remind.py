@@ -1,8 +1,11 @@
-import plugins
 import asyncio
 
+import plugins
+
+
 def _initialise(bot):
-    plugins.register_user_command(["remindme","remindall"])
+    plugins.register_user_command(["remindme", "remindall"])
+
 
 def remindme(bot, event, dly, *args):
     """
@@ -16,8 +19,9 @@ def remindme(bot, event, dly, *args):
         return
 
     try:
-        delayTime = float(dly)*60.0
-        yield from bot.coro_send_message(event.conv, _("Private reminder for <b>{}</b> in {}m").format(event.user.full_name, dly))
+        delayTime = float(dly) * 60.0
+        yield from bot.coro_send_message(event.conv,
+                                         _("Private reminder for <b>{}</b> in {}m").format(event.user.full_name, dly))
         conv_1on1 = yield from bot.get_1to1(event.user.id_.chat_id)
         yield from asyncio.sleep(delayTime)
         yield from bot.coro_send_message(conv_1on1, _("<b>Reminder:</b> " + " ".join(str(x) for x in args)))
@@ -37,7 +41,7 @@ def remindall(bot, event, dly, *args):
         return
 
     try:
-        delayTime = float(dly)*60.0
+        delayTime = float(dly) * 60.0
         yield from bot.coro_send_message(event.conv, _("Public reminder in {}m").format(dly))
         yield from asyncio.sleep(delayTime)
         yield from bot.coro_send_message(event.conv, _("<b>Reminder:</b> " + " ".join(str(x) for x in args)))

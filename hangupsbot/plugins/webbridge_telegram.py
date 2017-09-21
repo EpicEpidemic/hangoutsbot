@@ -1,14 +1,14 @@
-import aiohttp, asyncio, json, logging, requests
-
+import aiohttp
+import asyncio
+import json
+import logging
 import plugins
-
-from webbridge import WebFramework, IncomingRequestHandler
+from webbridge import WebFramework
 
 logger = logging.getLogger(__name__)
 
 
 class BridgeInstance(WebFramework):
-
     def _handle_websync(self, bot, event, command):
         for mapped in self.configuration[0]["conversation_map"]:
             if event.conv_id in mapped["hangouts"]:
@@ -26,14 +26,12 @@ class BridgeInstance(WebFramework):
 
                 for telegram_id in mapped["telegram"]:
                     asyncio.async(
-                        self.telegram_api_request("sendMessage", { "chat_id" : telegram_id, 
-                                                                   "text" : user_full_name + " : " + conversation_text })
+                        self.telegram_api_request("sendMessage", {"chat_id": telegram_id,
+                                                                  "text": user_full_name + " : " + conversation_text})
                     ).add_done_callback(lambda future: future.result())
-
 
     def _start_sinks(self, bot):
         plugins.start_asyncio_task(self.telegram_longpoll)
-
 
     @asyncio.coroutine
     def telegram_api_request(self, method, data):
@@ -51,7 +49,6 @@ class BridgeInstance(WebFramework):
 
         return raw
 
-
     @asyncio.coroutine
     def telegram_longpoll(self, bot):
         connector = aiohttp.TCPConnector(verify_ssl=True)
@@ -68,11 +65,12 @@ class BridgeInstance(WebFramework):
 
         while True:
             try:
-                data = { "timeout": 60 }
+                data = {"timeout": 60}
                 if max_offset:
                     data["offset"] = int(max_offset) + 1
-                res = yield from asyncio.wait_for(aiohttp.request('post', url, data=data, headers=headers, connector=connector), CONNECT_TIMEOUT)
-                chunk = yield from res.content.read(1024*1024)
+                res = yield from asyncio.wait_for(
+                    aiohttp.request('post', url, data=data, headers=headers, connector=connector), CONNECT_TIMEOUT)
+                chunk = yield from res.content.read(1024 * 1024)
             except asyncio.TimeoutError:
                 raise
             except asyncio.CancelledError:
@@ -98,8 +96,8 @@ class BridgeInstance(WebFramework):
                             telegram = mapped["telegram"]
                             if str(message["chat"]["id"]) in telegram:
                                 for conv_id in mapped["hangouts"]:
-                                    yield from bot.coro_send_message( conv_id, 
-                                                                      text_message )
+                                    yield from bot.coro_send_message(conv_id,
+                                                                     text_message)
 
                     logger.debug(response)
             else:

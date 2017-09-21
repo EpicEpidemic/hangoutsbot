@@ -2,9 +2,8 @@
 execute parser test by running this file directly with the interpreter
 """
 
-import logging
 import html
-
+import logging
 from html.parser import HTMLParser
 
 import hangups
@@ -12,7 +11,7 @@ import hangups
 
 def simple_parse_to_segments(html, debug=False, **kwargs):
     html = fix_urls(html)
-    html = '<html>' + html + '</html>' # html.parser seems to ignore the final entityref without html closure
+    html = '<html>' + html + '</html>'  # html.parser seems to ignore the final entityref without html closure
     parser = simpleHTMLParser(debug)
     return parser.feed(html)
 
@@ -50,10 +49,10 @@ class simpleHTMLParser(HTMLParser):
 
         self._debug = debug
 
-        self._flags = {"bold" : False,
-                       "italic" : False,
-                       "underline" : False,
-                       "link_target" : None}
+        self._flags = {"bold": False,
+                       "italic": False,
+                       "underline": False,
+                       "link_target": None}
 
         self._link_text = None
 
@@ -106,13 +105,13 @@ class simpleHTMLParser(HTMLParser):
             self._flags["underline"] = False
         elif tag == 'a':
             self._segments.append(
-              hangups.ChatMessageSegment(
-                self._link_text,
-                hangups.SegmentType.LINK,
-                link_target=self._flags["link_target"],
-                is_bold=self._flags["bold"],
-                is_italic=self._flags["italic"],
-                is_underline=self._flags["underline"]))
+                hangups.ChatMessageSegment(
+                    self._link_text,
+                    hangups.SegmentType.LINK,
+                    link_target=self._flags["link_target"],
+                    is_bold=self._flags["bold"],
+                    is_italic=self._flags["italic"],
+                    is_underline=self._flags["underline"]))
             self._flags["link_target"] = None
         else:
             # xxx: this removes any attributes inside the tag
@@ -120,7 +119,7 @@ class simpleHTMLParser(HTMLParser):
 
     def handle_entityref(self, name):
         if self._flags["link_target"] is not None:
-            if(self._debug): print("simpleHTMLParser(): [LINK] entityref {}".format(name))
+            if (self._debug): print("simpleHTMLParser(): [LINK] entityref {}".format(name))
             self._link_text += "&" + name
         else:
             _unescaped = html.unescape("&" + name)
@@ -128,7 +127,7 @@ class simpleHTMLParser(HTMLParser):
 
     def handle_data(self, data):
         if self._flags["link_target"] is not None:
-            if(self._debug): print("simpleHTMLParser(): [LINK] data \"{}\"".format(data))
+            if (self._debug): print("simpleHTMLParser(): [LINK] data \"{}\"".format(data))
             self._link_text += data
         else:
             self.segments_extend(data, "data")
@@ -141,34 +140,35 @@ class simpleHTMLParser(HTMLParser):
 
     def segments_extend(self, text, type, forceNew=False):
         if len(self._segments) == 0 or forceNew is True:
-            if(self._debug): print("simpleHTMLParser(): [NEW] {} {}".format(type, text))
+            if (self._debug): print("simpleHTMLParser(): [NEW] {} {}".format(type, text))
             self._segments.append(
-              hangups.ChatMessageSegment(
-                text,
-                is_bold=self._flags["bold"],
-                is_italic=self._flags["italic"],
-                is_underline=self._flags["underline"],
-                link_target=self._flags["link_target"]))
+                hangups.ChatMessageSegment(
+                    text,
+                    is_bold=self._flags["bold"],
+                    is_italic=self._flags["italic"],
+                    is_underline=self._flags["underline"],
+                    link_target=self._flags["link_target"]))
         else:
-            if(self._debug): print("simpleHTMLParser(): [APPEND] {} {}".format(type, text))
+            if (self._debug): print("simpleHTMLParser(): [APPEND] {} {}".format(type, text))
             previous_segment = self._segments[-1]
             if (previous_segment.is_bold != self._flags["bold"] or
-                    previous_segment.is_italic != self._flags["italic"] or
-                    previous_segment.is_underline != self._flags["underline"] or
-                    previous_segment.link_target != self._flags["link_target"] or
-                    previous_segment.text == "\n"):
+                        previous_segment.is_italic != self._flags["italic"] or
+                        previous_segment.is_underline != self._flags["underline"] or
+                        previous_segment.link_target != self._flags["link_target"] or
+                        previous_segment.text == "\n"):
                 self.segments_extend(text, type, forceNew=True)
             else:
                 previous_segment.text += text
 
+
 def fix_urls(text):
-    tokens = text.split() # "a  b" => (a,b)
+    tokens = text.split()  # "a  b" => (a,b)
     urlified = []
     for token in tokens:
         pretoken = ""
         posttoken = ""
         # consume a token looking for a url-like pattern...
-        while len(token)>10: # stop below shortest possible domain http://g.cn length
+        while len(token) > 10:  # stop below shortest possible domain http://g.cn length
             if token.startswith(("http://", "https://")):
                 break;
             if token[0:1] in ('"', '=', "'", "<"):
@@ -190,83 +190,84 @@ def fix_urls(text):
     text = " ".join(urlified)
     return text
 
+
 def test_parser():
     test_strings = [
         ["hello world",
-            'hello world', # expected return by fix_urls()
-            [1]], # expected number of segments returned by simple_parse_to_segments()
+         'hello world',  # expected return by fix_urls()
+         [1]],  # expected number of segments returned by simple_parse_to_segments()
         ["http://www.google.com/",
-            '<a href="http://www.google.com/">http://www.google.com/</a>',
-            [1]],
+         '<a href="http://www.google.com/">http://www.google.com/</a>',
+         [1]],
         ["https://www.google.com/?a=b&c=d&e=f",
-            '<a href="https://www.google.com/?a=b&c=d&e=f">https://www.google.com/?a=b&c=d&e=f</a>',
-            [1]],
+         '<a href="https://www.google.com/?a=b&c=d&e=f">https://www.google.com/?a=b&c=d&e=f</a>',
+         [1]],
         ["&lt;html-encoded test&gt;",
-            '&lt;html-encoded test&gt;',
-            [1]],
+         '&lt;html-encoded test&gt;',
+         [1]],
         ["A&B&C&D&E",
-            'A&B&C&D&E',
-            [1]],
+         'A&B&C&D&E',
+         [1]],
         ["A&<b>B</b>&C&D&E",
-            'A&<b>B</b>&C&D&E',
-            [3]],
+         'A&<b>B</b>&C&D&E',
+         [3]],
         ["A&amp;B&amp;C&amp;D&amp;E",
-            'A&amp;B&amp;C&amp;D&amp;E',
-            [1]],
+         'A&amp;B&amp;C&amp;D&amp;E',
+         [1]],
         ["C&L",
-            'C&L',
-            [1]],
+         'C&L',
+         [1]],
         ["<in a fake tag>",
-            '<in a fake tag>',
-            [1]],
+         '<in a fake tag>',
+         [1]],
         ['<img src="http://i.imgur.com/E3gxs.gif"/>',
-            '<img src="http://i.imgur.com/E3gxs.gif"/>',
-            [1]],
+         '<img src="http://i.imgur.com/E3gxs.gif"/>',
+         [1]],
         ['<img src="http://i.imgur.com/E3gxs.gif" />',
-            '<img src="http://i.imgur.com/E3gxs.gif" />',
-            [1]],
+         '<img src="http://i.imgur.com/E3gxs.gif" />',
+         [1]],
         ['<img src="http://i.imgur.com/E3gxs.gif" abc />',
-            '<img src="http://i.imgur.com/E3gxs.gif" abc />',
-            [1]],
+         '<img src="http://i.imgur.com/E3gxs.gif" abc />',
+         [1]],
         ['<in "a"="abc" fake tag>',
-            '<in "a"="abc" fake tag>',
-            [1]],
+         '<in "a"="abc" fake tag>',
+         [1]],
         ['<in a=abc fake tag>',
-            '<in a=abc fake tag>',
-            [1]],
+         '<in a=abc fake tag>',
+         [1]],
         ["abc <some@email.com>",
-            'abc <some@email.com>',
-            [1]],
-        ['</in "a"="xyz" fake tag>', # XXX: fails due to HTMLParser limitations
-            '</in "a"="xyz" fake tag>',
-            [1]],
-        ['<html><html><b></html></b><b>ABC</b>', # XXX: </html> is consumed
-            '<html><html><b></html></b><b>ABC</b>',
-            [2]],
+         'abc <some@email.com>',
+         [1]],
+        ['</in "a"="xyz" fake tag>',  # XXX: fails due to HTMLParser limitations
+         '</in "a"="xyz" fake tag>',
+         [1]],
+        ['<html><html><b></html></b><b>ABC</b>',  # XXX: </html> is consumed
+         '<html><html><b></html></b><b>ABC</b>',
+         [2]],
         ["go here: http://www.google.com/",
-            'go here: <a href="http://www.google.com/">http://www.google.com/</a>',
-            [2]],
+         'go here: <a href="http://www.google.com/">http://www.google.com/</a>',
+         [2]],
         ['go here: <a href="http://google.com/">http://www.google.com/</a>',
-            'go here: <a href="http://google.com/">http://www.google.com/</a>',
-            [2]],
+         'go here: <a href="http://google.com/">http://www.google.com/</a>',
+         [2]],
         ["go here: http://www.google.com/ abc",
-            'go here: <a href="http://www.google.com/">http://www.google.com/</a> abc',
-            [3]],
+         'go here: <a href="http://www.google.com/">http://www.google.com/</a> abc',
+         [3]],
         ['http://i.imgur.com/E3gxs.gif',
-            '<a href="http://i.imgur.com/E3gxs.gif">http://i.imgur.com/E3gxs.gif</a>',
-            [1]],
+         '<a href="http://i.imgur.com/E3gxs.gif">http://i.imgur.com/E3gxs.gif</a>',
+         [1]],
         ['(http://i.imgur.com/E3gxs.gif)',
-            '(<a href="http://i.imgur.com/E3gxs.gif">http://i.imgur.com/E3gxs.gif</a>)',
-            [3]],
+         '(<a href="http://i.imgur.com/E3gxs.gif">http://i.imgur.com/E3gxs.gif</a>)',
+         [3]],
         ['(http://i.imgur.com/E3gxs.gif).',
-            '(<a href="http://i.imgur.com/E3gxs.gif">http://i.imgur.com/E3gxs.gif</a>).',
-            [3]],
+         '(<a href="http://i.imgur.com/E3gxs.gif">http://i.imgur.com/E3gxs.gif</a>).',
+         [3]],
         ['XXXXXXXXXXXXXXXXXXXhttp://i.imgur.com/E3gxs.gif)........',
-            'XXXXXXXXXXXXXXXXXXX<a href="http://i.imgur.com/E3gxs.gif">http://i.imgur.com/E3gxs.gif</a>)........',
-            [3]],
+         'XXXXXXXXXXXXXXXXXXX<a href="http://i.imgur.com/E3gxs.gif">http://i.imgur.com/E3gxs.gif</a>)........',
+         [3]],
         ["https://www.google.com<br />",
-            '<a href="https://www.google.com">https://www.google.com</a><br />',
-            [2]]
+         '<a href="https://www.google.com">https://www.google.com</a><br />',
+         [2]]
     ]
 
     print("*** TEST: utils.fix_urls() ***")
@@ -307,6 +308,7 @@ def test_parser():
                 DEVIATION = True
     if DEVIATION is False:
         print("*** TEST: simple_parse_to_segments(): PASS ***")
+
 
 if __name__ == '__main__':
     test_parser()

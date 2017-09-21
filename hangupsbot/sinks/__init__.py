@@ -1,16 +1,15 @@
-import asyncio, functools, logging, os, ssl
-
-from aiohttp import web
-from threading import Thread
+import asyncio
+import functools
+import logging
+import os
+import ssl
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from utils import class_from_name
-
-from sinks.base_bot_request_handler import BaseBotRequestHandler, AsyncRequestHandler
 
 import threadmanager
-
+from aiohttp import web
 from plugins import tracking
-
+from sinks.base_bot_request_handler import AsyncRequestHandler
+from utils import class_from_name
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +93,8 @@ def start(bot):
         logger.info("{} aiohttp web listener(s)".format(aiohttpcount))
 
 
-def start_listening(bot=None, loop=None, name="", port=8000, certfile=None, webhookReceiver=BaseHTTPRequestHandler, friendlyName="UNKNOWN"):
+def start_listening(bot=None, loop=None, name="", port=8000, certfile=None, webhookReceiver=BaseHTTPRequestHandler,
+                    friendlyName="UNKNOWN"):
     if loop:
         asyncio.set_event_loop(loop)
 
@@ -138,7 +138,6 @@ def start_listening(bot=None, loop=None, name="", port=8000, certfile=None, webh
         httpd.socket.close()
 
 
-
 def aiohttp_start(bot, name, port, certfile, RequestHandlerClass, group, callback=None):
     RequestHandler = RequestHandlerClass(bot)
 
@@ -156,13 +155,14 @@ def aiohttp_start(bot, name, port, certfile, RequestHandlerClass, group, callbac
     loop = asyncio.get_event_loop()
     server = loop.create_server(handler, name, port, ssl=sslcontext)
 
-    asyncio.async(server).add_done_callback(functools.partial( aiohttp_started,
-                                                               handler=handler,
-                                                               app=app,
-                                                               group=group,
-                                                               callback=callback ))
+    asyncio.async(server).add_done_callback(functools.partial(aiohttp_started,
+                                                              handler=handler,
+                                                              app=app,
+                                                              group=group,
+                                                              callback=callback))
 
     tracking.register_aiohttp_web(group)
+
 
 def aiohttp_started(future, handler, app, group, callback=None):
     server = future.result()
@@ -175,6 +175,7 @@ def aiohttp_started(future, handler, app, group, callback=None):
     if callback:
         callback(constructors)
 
+
 def aiohttp_list(groups):
     if isinstance(groups, str):
         groups = [groups]
@@ -185,6 +186,7 @@ def aiohttp_list(groups):
             filtered.append(constructors)
 
     return filtered
+
 
 @asyncio.coroutine
 def aiohttp_terminate(groups):

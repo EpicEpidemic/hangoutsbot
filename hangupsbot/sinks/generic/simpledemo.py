@@ -1,19 +1,18 @@
-import time
-import json
-import base64
-import io
 import asyncio
+import base64
 import imghdr
+import io
+import json
 import logging
-
-
+import time
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
 from utils import simple_parse_to_segments
 
+
 class webhookReceiver(BaseHTTPRequestHandler):
-    _bot = None # set externally by the hangupsbot sink loader
+    _bot = None  # set externally by the hangupsbot sink loader
     sinkname = "sink"
 
     @asyncio.coroutine
@@ -38,7 +37,7 @@ class webhookReceiver(BaseHTTPRequestHandler):
                 image_data = io.BytesIO(raw)
                 image_type = imghdr.what('ignore', raw)
                 if not image_type:
-                  image_type = 'error'
+                    image_type = 'error'
             if "filename" in payload["image"]:
                 image_filename = payload["image"]["filename"]
             else:
@@ -56,7 +55,6 @@ class webhookReceiver(BaseHTTPRequestHandler):
         print("{} sending segments: {}".format(sinkname, len(segments)))
 
         yield from self._bot.coro_send_message(conversation_id, segments, context=None, image_id=image_id)
-
 
     def do_POST(self):
         logging.warning("[DEPRECATED] simpledemo.webhookReceiver, use sinks.generic.SimpleMessagePoster")

@@ -1,11 +1,9 @@
-import asyncio, logging
+import asyncio
+import logging
 
 import plugins
-import threadmanager
-
 from sinks import aiohttp_start
 from sinks.base_bot_request_handler import AsyncRequestHandler as IncomingRequestHandler
-
 
 logger = logging.getLogger(__name__)
 
@@ -26,12 +24,10 @@ class WebFramework:
 
         plugins.register_handler(self._handle_websync)
 
-
     def load_configuration(self, bot, configkey):
         self.configuration = bot.get_config_option(self.configkey)
 
         return self.configuration
-
 
     def _start_sinks(self, bot):
         loop = asyncio.get_event_loop()
@@ -64,7 +60,6 @@ class WebFramework:
 
         logger.info("webbridge.sinks: {} thread(s) started for {}".format(itemNo + 1, self.configkey))
 
-
     def _handle_websync(self, bot, event, command):
         """Handle hangouts messages, preparing them to be sent to the
         external service
@@ -81,4 +76,3 @@ class WebFramework:
 
     def _send_to_external_chat(self, bot, event, config):
         logger.info("webbridge._send_to_external_chat(): {} {}".format(self.configkey, config))
-

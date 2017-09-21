@@ -1,18 +1,17 @@
 # A Sync plugin for Telegram and Hangouts
 
-import os
-import logging
-import io
-import random
 import asyncio
-import hangups
-import plugins
+import logging
+import os
+import random
+
 import aiohttp
+import hangups
 import telepot
 import telepot.async
 import telepot.exception
-from handlers import handler
 from commands import command
+from handlers import handler
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +45,6 @@ class TelegramBot(telepot.async.Bot):
         self.username = _bot_data['username']
         logger.info('[TELESYNC]Telegram bot info: id: {bot_id}, name: {bot_name}, username: {bot_username}'.format(
             bot_id=self.id, bot_name=self.name, bot_username=self.username))
-
 
     def add_command(self, cmd, func):
         self.commands[cmd] = func
@@ -300,9 +298,9 @@ def tg_on_message(tg_bot, tg_chat_id, msg):
                     'importance': 50
                 },
                 'repocessor': tg_bot.ho_bot.call_shared("reprocessor.attach_reprocessor",
-                    _repeater_cleaner, return_as_dict=True)
-                }
-            )
+                                                        _repeater_cleaner, return_as_dict=True)
+            }
+        )
         logger.debug("forwarded to %s: %s", ho_conv_id, msg['text'])
 
 
@@ -856,10 +854,10 @@ def is_animated_photo(file_name):
 @handler.register(priority=5, event=hangups.ChatMessageEvent)
 def _on_hangouts_message(bot, event, command=""):
     if event.text.startswith('/'):
-        return                              # don't allow HO to issue / commands to TG
+        return  # don't allow HO to issue / commands to TG
 
     if "_telesync_no_repeat" in dir(event) and event._telesync_no_repeat:
-        return                              # don't sync our stuff back to ourselves
+        return  # don't sync our stuff back to ourselves
 
     config_dict = tg_bot.ho_bot.config.get_by_path(['telesync'])
     ho2tg_dict = bot.memory.get_by_path(['telesync'])['ho2tg']
