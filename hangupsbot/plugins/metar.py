@@ -2,11 +2,9 @@
 Looks up the most recent METAR/TAF weather report for the supplied ICAO airport code.
         <b>/bot metar <ICAO airport code></b>
         <b>/bot taf <ICAO airport code></b>
-
 ICAO Airport Codes: https://en.wikipedia.org/wiki/International_Civil_Aviation_Organization_airport_code
 METAR source: http://aviationweather.gov
 """
-
 import logging
 from xml.etree import ElementTree
 
@@ -43,9 +41,7 @@ METAR source: http://aviationweather.gov"""
         yield from bot.coro_send_message(event.conv_id,
                                          "You need to enter the ICAO airport code you wish the look up, https://en.wikipedia.org/wiki/International_Civil_Aviation_Organization_airport_code .")
         return
-
     data = _api_lookup('METAR', code)
-
     if data is None:
         yield from bot.coro_send_message(event.conv_id, "There was an error retrieving the METAR information.")
     elif not data or len(data) == 0:
@@ -60,15 +56,12 @@ def taf(bot, event, *args):
 <b>/bot taf <ICAO airport code></b>
 ICAO Airport Codes: https://en.wikipedia.org/wiki/International_Civil_Aviation_Organization_airport_code
 TAF source: http://aviationweather.gov"""
-
     code = ''.join(args).strip()
     if not code:
         yield from bot.coro_send_message(event.conv_id,
                                          "You need to enter the ICAO airport code you wish the look up, https://en.wikipedia.org/wiki/International_Civil_Aviation_Organization_airport_code .")
         return
-
     data = _api_lookup('TAF', code)
-
     if data is None:
         yield from bot.coro_send_message(event.conv_id, "There was an error retrieving the TAF information.")
     elif not data or len(data) == 0:

@@ -62,7 +62,6 @@ class tracker:
     def end(self):
         current_module = self.current()
         self.list[current_module["metadata"]["module.path"]] = current_module
-
         # sync tagged commands to the command dispatcher
         if self._current["commands"]["tagged"]:
             for command_name, type_tags in self._current["commands"]["tagged"].items():
@@ -75,20 +74,16 @@ class tracker:
         """call during plugin init to register commands"""
         self._current["commands"][type].extend(command_names)
         self._current["commands"][type] = list(set(self._current["commands"][type]))
-
         config_plugins_tags_autoregister = self.bot.get_config_option('plugins.tags.auto-register')
         if config_plugins_tags_autoregister is None:
             config_plugins_tags_autoregister = True
-
         if not tags and not config_plugins_tags_autoregister:
             return
-
         if not tags:
             # assumes config["plugins.tags.auto-register"] == True
             tags = []
         elif isinstance(tags, str):
             tags = [tags]
-
         if config_plugins_tags_autoregister is True:
             presets = ["{plugin}-{command}", "{plugin}-{type}"]
         elif config_plugins_tags_autoregister:
@@ -97,30 +92,23 @@ class tracker:
                 presets = [presets]
         else:
             presets = []
-
         for command_name in command_names:
             command_tags = list(tags) + list(presets)  # use copies
-
             recursive_tag_format(command_tags,
                                  command=command_name,
                                  type=type,
                                  plugin=self._current["metadata"]["module"])
-
             self.register_tags(type, command_name, command_tags)
 
     def register_tags(self, type, command_name, tags):
         if command_name not in self._current["commands"]["tagged"]:
             self._current["commands"]["tagged"][command_name] = {}
-
         if type not in self._current["commands"]["tagged"][command_name]:
             self._current["commands"]["tagged"][command_name][type] = set()
-
         tagsets = set([frozenset(item if isinstance(item, list) else [item]) for item in tags])
-
         # registration might be called repeatedly, so only add the tagsets if it doesnt exist
         if tagsets > self._current["commands"]["tagged"][command_name][type]:
             self._current["commands"]["tagged"][command_name][type] |= tagsets
-
         logger.debug("{} - [{}] tags: {}".format(command_name, type, tags))
 
     def register_handler(self, function, type, priority):
@@ -185,11 +173,8 @@ def start_asyncio_task(coroutine_function, *args, **kwargs):
     if asyncio.iscoroutinefunction(coroutine_function):
         loop = asyncio.get_event_loop()
         task = loop.create_task(coroutine_function(tracking.bot, *args, **kwargs))
-
         asyncio.async(task).add_done_callback(asyncio_task_ended)
-
         tracking.register_asyncio_task(task)
-
     else:
         raise RuntimeError("coroutine function must be supplied")
 
@@ -206,24 +191,17 @@ def retrieve_all_plugins(plugin_path=None, must_start_with=False, allow_undersco
       EXACT plugin/folder name for it to be retrieved, matching starting _ is optional
       if allow_underscore=True
     """
-
     if not plugin_path:
         plugin_path = os.path.dirname(os.path.realpath(sys.argv[0])) + os.sep + "plugins"
-
     plugin_list = []
-
     nodes = os.listdir(plugin_path)
-
     for node_name in nodes:
         full_path = os.path.join(plugin_path, node_name)
         module_names = [os.path.splitext(node_name)[0]]  # node_name without .py extension
-
         if node_name.startswith(("__", ".")):
             continue
-
         if node_name.startswith("_") and not allow_underscore:
             continue
-
         if must_start_with:
             prefixes = [must_start_with]
             if allow_underscore:
@@ -235,50 +213,40 @@ def retrieve_all_plugins(plugin_path=None, must_start_with=False, allow_undersco
                     prefixes.append('_' + must_start_with)
             if not node_name.startswith(tuple(prefixes)):
                 continue
-
         if os.path.isfile(full_path):
             if not node_name.endswith(".py"):
                 continue
         else:
             if not os.path.isfile(os.path.join(full_path, "__init__.py")):
                 continue
-
             for sm in retrieve_all_plugins(full_path, must_start_with=node_name, allow_underscore=allow_underscore):
                 module_names.append(module_names[0] + "." + sm)
-
         plugin_list.extend(module_names)
-
     logger.debug("retrieved {}: {}.{}".format(len(plugin_list), must_start_with or "plugins", plugin_list))
     return plugin_list
 
 
 def get_configured_plugins(bot):
     config_plugins = bot.get_config_option('plugins')
-
     if config_plugins is None:  # must be unset in config or null
         logger.info("plugins is not defined, using ALL")
         plugin_list = retrieve_all_plugins()
-
     else:
         """perform fuzzy matching with actual retrieved plugins, e.g. "abc" matches "xyz.abc"
         if more than one match found, don't load plugin
         """
         plugins_included = []
         plugins_excluded = retrieve_all_plugins(allow_underscore=True)
-
         plugin_name_ambiguous = []
         plugin_name_not_found = []
-
         for item_no, configured in enumerate(config_plugins):
             dotconfigured = "." + configured
-
             matches = []
             for found in plugins_excluded:
                 fullfound = "plugins." + found
                 if fullfound.endswith(dotconfigured):
                     matches.append(found)
             num_matches = len(matches)
-
             if num_matches <= 0:
                 logger.debug("{}:{} no match".format(item_no, configured))
                 plugin_name_not_found.append([item_no, configured])
@@ -289,33 +257,25 @@ def get_configured_plugins(bot):
             else:
                 logger.debug("{}:{} ambiguous, matches {}".format(item_no, configured, matches))
                 plugin_name_ambiguous.append([item_no, configured])
-
         if plugins_excluded:
             # show plugins visible to the loader, but not actually initialised/loaded
             logger.info("excluded {}: {}".format(len(plugins_excluded), plugins_excluded))
-
         if plugin_name_ambiguous:
             # include the index of item(s) in the plugins config key
             logger.warning("ambiguous: {}".format(["{}:{}".format(_num, _name)
                                                    for _num, _name in plugin_name_ambiguous]))
-
         if plugin_name_not_found:
             # include the index of item(s) in the plugins config key
             logger.warning("not found: {}".format(["{}:{}".format(_num, _name)
                                                    for _num, _name in plugin_name_not_found]))
-
         plugin_list = plugins_included
-
     logger.info("included {}: {}".format(len(plugin_list), plugin_list))
-
     return plugin_list
 
 
 def load_user_plugins(bot):
     """loads all user plugins"""
-
     plugin_list = get_configured_plugins(bot)
-
     for module in plugin_list:
         module_path = "plugins.{}".format(module)
         load(bot, module_path)
@@ -327,39 +287,29 @@ def unload_all(bot):
     for module_path in module_paths:
         try:
             yield from unload(bot, module_path)
-
         except RuntimeError as e:
             logger.exception("{} could not be unloaded".format(module_path))
 
 
 def load(bot, module_path, module_name=None):
     """loads a single plugin-like object as identified by module_path, and initialise it"""
-
     if module_name is None:
         module_name = module_path.split(".")[-1]
-
     if module_path in tracking.list:
         raise RuntimeError("{} already loaded".format(module_path))
-
     tracking.start({"module": module_name, "module.path": module_path})
-
     try:
         if module_path in sys.modules:
             importlib.reload(sys.modules[module_path])
             logger.debug("reloading {}".format(module_path))
-
         else:
             importlib.import_module(module_path)
             logger.debug("importing {}".format(module_path))
-
     except Exception as e:
         logger.exception("EXCEPTION during plugin import: {}".format(module_path))
         return
-
     public_functions = [o for o in getmembers(sys.modules[module_path], isfunction)]
-
     candidate_commands = []
-
     """pass 1: run optional callable: _initialise, _initialize
     * performs house-keeping tasks (e.g. migration, tear-up, pre-init, etc)
     * registers user and/or admin commands
@@ -388,15 +338,13 @@ def load(bot, module_path, module_name=None):
                         # legacy support, pre-2.4
                         logger.info(
                             "[LEGACY] upgrade {1}.{0}(handlers, bot) to {0}(bot) and use bot._handlers internally"
-                            .format(the_function.__name__, module_path))
-
+                                .format(the_function.__name__, module_path))
                         _return = the_function(bot._handlers, bot)
                     except TypeError as e:
                         # DEPRECATED: ancient plugins
                         logger.warning(
                             "[DEPRECATED] upgrade {1}.{0}(handlers) to {0}(bot) and use bot._handlers internally"
-                            .format(the_function.__name__, module_path))
-
+                                .format(the_function.__name__, module_path))
                         _return = the_function(bot._handlers)
                 if type(_return) is list:
                     available_commands = _return
@@ -416,7 +364,6 @@ def load(bot, module_path, module_name=None):
     except Exception as e:
         logger.exception("EXCEPTION during plugin init: {}".format(module_path))
         return  # skip this, attempt next plugin
-
     """
     pass 2: register filtered functions
     tracking.current() and the CommandDispatcher registers might be out of sync if a 
@@ -424,7 +371,6 @@ def load(bot, module_path, module_name=None):
     decorators execute immediately upon import
     """
     plugin_tracking = tracking.current()
-
     explicit_admin_commands = plugin_tracking["commands"]["admin"]
     all_commands = plugin_tracking["commands"]["all"]
     registered_commands = []
@@ -435,18 +381,13 @@ def load(bot, module_path, module_name=None):
             if function_name in explicit_admin_commands:
                 is_admin = True
                 text_function_name = "*" + text_function_name
-
             command.register(the_function, admin=is_admin, final=True)
-
             registered_commands.append(text_function_name)
-
     if registered_commands:
         logger.info("{} - {}".format(module_name, ", ".join(registered_commands)))
     else:
         logger.info("{} - no commands".format(module_name))
-
     tracking.end()
-
     return True
 
 
@@ -455,7 +396,6 @@ def unload(bot, module_path):
     if module_path in tracking.list:
         plugin = tracking.list[module_path]
         loop = asyncio.get_event_loop()
-
         if len(plugin["threads"]) == 0:
             all_commands = plugin["commands"]["all"]
             for command_name in all_commands:
@@ -465,44 +405,34 @@ def unload(bot, module_path):
                 if command_name in command.admin_commands:
                     logger.debug("deregistering admin command {}".format(command_name))
                     command.admin_commands.remove(command_name)
-
             for type in plugin["commands"]["tagged"]:
                 for command_name in plugin["commands"]["tagged"][type]:
                     if command_name in command.command_tagsets:
                         logger.debug("deregistering tagged command {}".format(command_name))
                         del command.command_tagsets[command_name]
-
             for type in bot._handlers.pluggables:
                 for handler in bot._handlers.pluggables[type]:
                     if handler[2]["module.path"] == module_path:
                         logger.debug("removing handler {} {}".format(type, handler))
                         bot._handlers.pluggables[type].remove(handler)
-
             shared = plugin["shared"]
             for shared_def in shared:
                 id = shared_def[0]
                 if id in bot.shared:
                     logger.debug("removing shared {}".format(id))
                     del bot.shared[id]
-
             if len(plugin["asyncio.task"]) > 0:
                 for task in plugin["asyncio.task"]:
                     logger.info("cancelling task: {}".format(task))
                     loop.call_soon_threadsafe(task.cancel)
-
             if len(plugin["aiohttp.web"]) > 0:
                 from sinks import aiohttp_terminate  # XXX: needs to be late-imported
                 for group in plugin["aiohttp.web"]:
                     yield from aiohttp_terminate(group)
-
             logger.info("{} unloaded".format(module_path))
-
             del tracking.list[module_path]
-
             return True
-
         else:
             raise RuntimeError("{} has {} thread(s)".format(module_path, len(plugin["threads"])))
-
     else:
         raise KeyError("{} not found".format(module_path))

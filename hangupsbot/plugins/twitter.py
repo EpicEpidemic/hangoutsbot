@@ -1,13 +1,14 @@
-import aiohttp
 import asyncio
 import datetime
 import io
 import json
 import logging
 import os
-import plugins
 import re
 import urllib.request
+
+import aiohttp
+import plugins
 from TwitterAPI import TwitterAPI
 from bs4 import BeautifulSoup
 
@@ -45,7 +46,6 @@ def twittersecret(bot, event, secret):
     '''Set your Twitter API Secret. Get one from https://apps.twitter.com/app'''
     if not bot.memory.get_by_path(['twitter']):
         bot.memory.set_by_path(['twitter'], {})
-
     bot.memory.set_by_path(['twitter', 'secret'], secret)
     yield from bot.coro_send_message(event.conv, "Twitter API secret set to <b>{}</b>.".format(secret))
 
@@ -54,21 +54,18 @@ def twitterkey(bot, event, key):
     '''Set your Twitter API Key. Get one from https://apps.twitter.com/'''
     if not bot.memory.get_by_path(['twitter']):
         bot.memory.set_by_path(['twitter'], {})
-
     bot.memory.set_by_path(['twitter', 'key'], key)
     yield from bot.coro_send_message(event.conv, "Twitter API key set to <b>{}</b>.".format(key))
 
 
 def twitterconfig(bot, event):
     '''Get your Twitter credentials. Remember that these are meant to be kept secret!'''
-
     if not bot.memory.exists(['twitter']):
         bot.memory.set_by_path(['twitter'], {})
     if not bot.memory.exists(['twitter', 'key']):
         bot.memory.set_by_path(['twitter', 'key'], "")
     if not bot.memory.exists(['twitter', 'secret']):
         bot.memory.set_by_path(['twitter', 'secret'], "")
-
     yield from bot.coro_send_message(event.conv, "<b>API key:</b> {}<br><b>API secret:</b> {}".format(
         bot.memory.get_by_path(['twitter', 'key']), bot.memory.get_by_path(['twitter', 'secret'])))
 
@@ -77,13 +74,10 @@ def twitterconfig(bot, event):
 def _watch_twitter_link(bot, event, command):
     if event.user.is_self:
         return
-
     if " " in event.text:
         return
-
     if not re.match("^https?://(www\.)?twitter.com/[a-zA-Z0-9_]{1,15}/status/[0-9]+$", event.text, re.IGNORECASE):
         return
-
     try:
         key = bot.memory.get_by_path(['twitter', 'key'])
         secret = bot.memory.get_by_path(['twitter', 'secret'])
@@ -112,10 +106,8 @@ def _watch_twitter_link(bot, event, command):
                     image_data = io.BytesIO(raw)
                     image_id = yield from bot._client.upload_image(image_data, filename=filename)
                     yield from bot.coro_send_message(event.conv.id_, None, image_id=image_id)
-
         except KeyError:
             pass
-
         yield from bot.coro_send_message(event.conv, message)
     except:
         url = event.text.lower()
@@ -125,7 +117,6 @@ def _watch_twitter_link(bot, event, command):
             logger.info("Tried and failed to get the twitter status text:(")
             logger.info(e.read())
             return
-
         username = re.match(r".+twitter\.com/([a-zA-Z0-9_]+)/", url).group(1)
         body = response.read()
         soup = BeautifulSoup(body.decode("utf-8"), "lxml")

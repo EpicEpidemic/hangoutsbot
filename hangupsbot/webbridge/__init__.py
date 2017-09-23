@@ -11,34 +11,26 @@ logger = logging.getLogger(__name__)
 class WebFramework:
     def __init__(self, bot, configkey, RequestHandler=IncomingRequestHandler):
         self._bot = bot
-
         self.bot = bot
         self.configkey = configkey
         self.RequestHandler = RequestHandler
-
         if not self.load_configuration(bot, configkey):
             logger.info("no configuration for {}, not running".format(self.configkey))
             return
-
         self._start_sinks(bot)
-
         plugins.register_handler(self._handle_websync)
 
     def load_configuration(self, bot, configkey):
         self.configuration = bot.get_config_option(self.configkey)
-
         return self.configuration
 
     def _start_sinks(self, bot):
         loop = asyncio.get_event_loop()
-
         itemNo = -1
         threads = []
-
         if isinstance(self.configuration, list):
             for listener in self.configuration:
                 itemNo += 1
-
                 try:
                     certfile = listener["certfile"]
                     if not certfile:
@@ -49,7 +41,6 @@ class WebFramework:
                 except KeyError as e:
                     logger.warning("config.{}[{}] missing keyword".format(self.configkey, itemNo))
                     continue
-
                 aiohttp_start(
                     bot,
                     name,
@@ -57,14 +48,12 @@ class WebFramework:
                     certfile,
                     self.RequestHandler,
                     "webbridge." + self.configkey)
-
         logger.info("webbridge.sinks: {} thread(s) started for {}".format(itemNo + 1, self.configkey))
 
     def _handle_websync(self, bot, event, command):
         """Handle hangouts messages, preparing them to be sent to the
         external service
         """
-
         if isinstance(self.configuration, list):
             for config in self.configuration:
                 try:

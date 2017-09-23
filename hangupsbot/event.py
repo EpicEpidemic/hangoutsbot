@@ -18,7 +18,6 @@ class StatusEvent(GenericEvent):
 
     def __init__(self, bot, state_update_event):
         super().__init__(bot)
-
         self.conv_event = state_update_event
         self.conv_id = state_update_event.conversation_id.id_
         self.conv = None
@@ -35,7 +34,6 @@ class TypingEvent(StatusEvent):
 
     def __init__(self, bot, state_update_event):
         super().__init__(bot, state_update_event)
-
         self.user_id = state_update_event.user_id
         self.timestamp = state_update_event.timestamp
         self.user = self.bot.get_hangups_user(state_update_event.user_id)
@@ -49,7 +47,6 @@ class WatermarkEvent(StatusEvent):
 
     def __init__(self, bot, state_update_event):
         super().__init__(bot, state_update_event)
-
         self.user_id = state_update_event.participant_id
         self.timestamp = state_update_event.latest_read_timestamp
         self.user = self.bot.get_hangups_user(state_update_event.participant_id)
@@ -63,7 +60,6 @@ class ConversationEvent(GenericEvent):
 
     def __init__(self, bot, conv_event):
         super().__init__(bot)
-
         self.conv_event = conv_event
         self.conv_id = conv_event.conversation_id
         self.conv = self.bot._conv_list.get(self.conv_id)
@@ -72,7 +68,6 @@ class ConversationEvent(GenericEvent):
         self.user = self.conv.get_user(self.user_id)
         self.timestamp = conv_event.timestamp
         self.text = conv_event.text.strip() if isinstance(conv_event, hangups.ChatMessageEvent) else ''
-
         self.log()
 
     def log(self):

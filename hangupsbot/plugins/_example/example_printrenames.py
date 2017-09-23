@@ -1,7 +1,6 @@
 """
 example plugin which watches rename events
 """
-
 import asyncio
 import logging
 
@@ -18,7 +17,6 @@ def _watch_rename(bot, event, command):
     # Don't handle events caused by the bot himself
     if event.user.is_self:
         return
-
     # Only print renames for now...
     if event.conv_event.new_name == '':
         logger.info('{} cleared the conversation name'.format(event.user.first_name))

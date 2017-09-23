@@ -1,16 +1,13 @@
 """API plugin for listening for server commands and treating them as ConversationEvents
 config.json will have to be configured as follows:
-
 "api_key": "API_KEY",
 "api": [{
   "certfile": null,
   "name": "SERVER_NAME",
   "port": LISTENING_PORT
 }]
-
 Also you will need to append the bot's own user_id to the admin list if you want
 to be able to run admin commands externally
-
 More info: https://github.com/hangoutsbot/hangoutsbot/wiki/API-Plugin
 """
 import asyncio
@@ -46,10 +43,8 @@ def response_received(bot, event, id, results, original_id):
 def handle_as_command(bot, event, id):
     event.from_bot = False
     event._syncroom_no_repeat = True
-
     if "acknowledge" not in dir(event):
         event.acknowledge = []
-
     handle_response = functools.partial(response_received, original_id=id)
     event.acknowledge.append(bot._handlers.register_reprocessor(handle_response))
 
@@ -57,11 +52,9 @@ def handle_as_command(bot, event, id):
 def _start_api(bot):
     api = bot.get_config_option('api')
     itemNo = -1
-
     if isinstance(api, list):
         for sinkConfig in api:
             itemNo += 1
-
             try:
                 certfile = sinkConfig["certfile"]
                 if not certfile:
@@ -72,7 +65,6 @@ def _start_api(bot):
             except KeyError as e:
                 logger.error("config.api[{}] missing keyword".format(itemNo), e)
                 continue
-
             aiohttp_start(bot, name, port, certfile, APIRequestHandler, group=__name__)
 
 
@@ -85,20 +77,16 @@ class APIRequestHandler(AsyncRequestHandler):
     @asyncio.coroutine
     def adapter_do_OPTIONS(self, request):
         origin = request.headers["Origin"]
-
         allowed_origins = self._bot.get_config_option("api_origins")
         if allowed_origins is None:
             raise HTTPForbidden()
-
         if "*" == allowed_origins or "*" in allowed_origins:
             return web.Response(headers={
                 "Access-Control-Allow-Origin": origin,
                 "Access-Control-Allow-Headers": "content-type",
             })
-
         if not origin in allowed_origins:
             raise HTTPForbidden()
-
         return web.Response(headers={
             "Access-Control-Allow-Origin": origin,
             "Access-Control-Allow-Headers": "content-type",
@@ -110,7 +98,6 @@ class APIRequestHandler(AsyncRequestHandler):
         payload = {"sendto": request.match_info["id"],
                    "key": request.match_info["api_key"],
                    "content": unquote(request.match_info["message"])}
-
         results = yield from self.process_request('',  # IGNORED
                                                   '',  # IGNORED
                                                   payload)
@@ -120,7 +107,6 @@ class APIRequestHandler(AsyncRequestHandler):
         else:
             content_type = "text/plain"
             results = "OK".encode('utf-8')
-
         return web.Response(body=results, content_type=content_type)
 
     @asyncio.coroutine
@@ -131,14 +117,10 @@ class APIRequestHandler(AsyncRequestHandler):
             # XXX: POST - payload in incoming request BODY (and not yet parsed, do it here)
             payload = json.loads(payload)
         # XXX: else GET - everything in query string (already parsed before it got here)
-
         api_key = self._bot.get_config_option("api_key")
-
         if payload["key"] != api_key:
             raise ValueError("API key does not match")
-
         results = yield from self.send_actionable_message(payload["sendto"], payload["content"])
-
         return results
 
     @asyncio.coroutine
@@ -148,13 +130,11 @@ class APIRequestHandler(AsyncRequestHandler):
                                                                      return_as_dict=True)
         content = content + reprocessor_context["fragment"]
         reprocessor_id = reprocessor_context["id"]
-
         if id in self._bot.conversations.catalog:
             results = yield from self._bot.coro_send_message(id, content)
         else:
             # attempt to send to a user id
             results = yield from self._bot.coro_send_to_user(id, content)
-
         start_time = time.time()
         while time.time() - start_time < 3:
             if reprocessor_id in reprocessor_queue:
@@ -162,5 +142,4 @@ class APIRequestHandler(AsyncRequestHandler):
                 del reprocessor_queue[reprocessor_id]
                 return "[" + str(time.time() - start_time) + "] " + response
             yield from asyncio.sleep(0.1)
-
         return results

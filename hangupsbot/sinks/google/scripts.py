@@ -17,19 +17,15 @@ class webhookReceiver(AsyncRequestHandler):
         if conv_or_user_id is None:
             logger.error("conversation or user id must be provided as part of path")
             return
-
         payload = content
         if isinstance(payload, str):
             payload = json.loads(payload)
-
         if not payload:
             logger.error("payload has nothing")
             return
-
         if "message" not in payload:
             logger.error("payload does not contain message")
             return
-
         yield from self.send_actionable_message(conv_or_user_id, payload["message"])
 
     @asyncio.coroutine

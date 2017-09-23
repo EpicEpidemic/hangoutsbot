@@ -1,7 +1,6 @@
 # coding: utf-8
 """
 Use DarkSky.net to get current weather forecast for a given location.
-
 Instructions:
     * Get an API key from https://darksky.net/dev/
     * Store API key in config.json:forecast_api_key
@@ -34,15 +33,12 @@ def setweatherlocation(bot, event, *args):
     if not location:
         yield from bot.coro_send_message(event.conv_id, _('No location was specified, please specify a location.'))
         return
-
     location = _lookup_address(location)
     if location is None:
         yield from bot.coro_send_message(event.conv_id, _('Unable to find the specified location.'))
         return
-
     if not bot.memory.exists(["conv_data", event.conv.id_]):
         bot.memory.set_by_path(['conv_data', event.conv.id_], {})
-
     bot.memory.set_by_path(["conv_data", event.conv.id_, "default_weather_location"],
                            {'lat': location['lat'], 'lng': location['lng']})
     bot.memory.save()
@@ -97,7 +93,6 @@ def _format_current_weather(weather):
         weatherStrings.append("Humidity: {0}%".format(weather['humidity']))
     if 'pressure' in weather:
         weatherStrings.append("Pressure: {0} {1}".format(round(weather['pressure'], 2), weather['units']['pressure']))
-
     return "<br/>".join(weatherStrings)
 
 
@@ -110,7 +105,6 @@ def _format_forecast_weather(weather):
         weatherStrings.append("<b>Next 24 Hours</b><br/>{}".format(weather['hourly']))
     if 'daily' in weather:
         weatherStrings.append("<b>Next 7 Days</b><br/>{}".format(weather['daily']))
-
     return "<br/>".join(weatherStrings)
 
 
@@ -143,11 +137,9 @@ def _lookup_weather(coords):
     Retrieve the current forecast for the specified coordinates from darksky.net
     Limit of 1,000 requests a day
     """
-
     forecast_io_url = 'https://api.darksky.net/forecast/{0}/{1},{2}?units=auto'.format(_internal['forecast_api_key'],
                                                                                        coords['lat'], coords['lng'])
     r = requests.get(forecast_io_url)
-
     try:
         j = r.json()
         current = {
@@ -163,19 +155,16 @@ def _lookup_weather(coords):
         }
         if current['units']['pressure'] == 'kPa':
             current['pressure'] = Decimal(current['pressure'] / 10)
-
         if 'hourly' in j:
             current['hourly'] = j['hourly']['summary']
         if 'daily' in j:
             current['daily'] = j['daily']['summary']
-
     except ValueError as e:
         logger.error("Forecast Error: {}".format(e))
         current = dict()
     except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError, requests.exceptions.Timeout):
         logger.error('unable to connect with api.darksky.net: %d - %s', resp.status_code, resp.text)
         return None
-
     return current
 
 
@@ -187,7 +176,6 @@ def _get_weather(bot, event, params):
     """
     parameters = list(params)
     location = {}
-
     if not parameters:
         if bot.memory.exists(["conv_data", event.conv.id_]):
             if (bot.memory.exists(["conv_data", event.conv.id_, "default_weather_location"])):
@@ -195,10 +183,8 @@ def _get_weather(bot, event, params):
     else:
         address = ''.join(parameters).strip()
         location = _lookup_address(address)
-
     if location:
         return _lookup_weather(location)
-
     return {}
 
 
@@ -267,5 +253,4 @@ def _get_wind_direction(degrees):
         directionText = "NW"
     elif degrees >= 320 and degrees < 355:
         directionText = "NNW"
-
     return directionText

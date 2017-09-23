@@ -39,12 +39,10 @@ def verifyme(bot, event, *args):
     """verify that the user has a 1-to-1 conversation with the bot.
     optionally, supply a user chat id to test a user other than yourself.
     """
-
     if len(args) == 0:
         chat_id = event.user.id_.chat_id
     else:
         chat_id = " ".join(args)
-
     one2one = yield from bot.get_1to1(chat_id)
     if one2one:
         if event.user_id.chat_id == chat_id:
@@ -52,7 +50,6 @@ def verifyme(bot, event, *args):
             yield from bot.coro_send_message(one2one,
                                              _(
                                                  '<i>verification completed - this is your one-to-one chat with the bot</i>'))
-
         if event.conv_id != one2one.id_:
             """announce verification wherever it was requested"""
             yield from bot.coro_send_message(event.conv,

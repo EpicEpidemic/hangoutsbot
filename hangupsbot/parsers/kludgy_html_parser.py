@@ -1,7 +1,6 @@
 """extremely hacky implementation of html parsing
 execute parser test by running this file directly with the interpreter
 """
-
 import html
 import logging
 from html.parser import HTMLParser
@@ -20,7 +19,6 @@ def segment_to_html(segment):
     """Create simple HTML from ChatMessageSegment"""
     text = html.escape(segment.text) if segment.text else ""
     text = text.replace('\n', '<br>\n')
-
     message = []
     if segment.type_ == hangups.schemas.SegmentType.TEXT:
         message.append(text)
@@ -32,30 +30,24 @@ def segment_to_html(segment):
         message.append('<br />\n')
     else:
         logging.warning('Ignoring unknown chat message segment type: {}'.format(segment.type_))
-
     if not segment.type_ == hangups.schemas.SegmentType.LINE_BREAK:
         for is_f, f in ((segment.is_bold, 'b'), (segment.is_italic, 'i'),
                         (segment.is_strikethrough, 's'), (segment.is_underline, 'u')):
             if is_f:
                 message.insert(0, '<{}>'.format(f))
                 message.append('</{}>'.format(f))
-
     return ''.join(message)
 
 
 class simpleHTMLParser(HTMLParser):
     def __init__(self, debug=False, **kwargs):
         super().__init__(kwargs)
-
         self._debug = debug
-
         self._flags = {"bold": False,
                        "italic": False,
                        "underline": False,
                        "link_target": None}
-
         self._link_text = None
-
         self._allow_extra_html_tag = False;
 
     def feed(self, html):
@@ -269,14 +261,12 @@ def test_parser():
          '<a href="https://www.google.com">https://www.google.com</a><br />',
          [2]]
     ]
-
     print("*** TEST: utils.fix_urls() ***")
     DEVIATION = False
     for test in test_strings:
         original = test[0]
         expected_urlified = test[1]
         actual_urlified = fix_urls(original)
-
         if actual_urlified != expected_urlified:
             print("ORIGINAL: {}".format(original))
             print("EXPECTED: {}".format(expected_urlified))
@@ -285,16 +275,13 @@ def test_parser():
             DEVIATION = True
     if DEVIATION is False:
         print("*** TEST: utils.fix_urls(): PASS ***")
-
     if DEVIATION is False:
         print("*** TEST: simple_parse_to_segments() ***")
         for test in test_strings:
             original = test[0]
             expected_segment_count = test[2][0]
-
             segments = simple_parse_to_segments(original)
             actual_segment_count = len(segments)
-
             if expected_segment_count != actual_segment_count:
                 print("ORIGINAL: {}".format(original))
                 print("EXPECTED/ACTUAL COUNT: {}/{}".format(expected_segment_count, actual_segment_count))

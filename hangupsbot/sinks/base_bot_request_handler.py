@@ -26,7 +26,6 @@ class BaseBotRequestHandler(BaseHTTPRequestHandler):
         acquire the path, any query string (?abc=xyz), sent content
         """
         logger.debug('{}: receiving POST...'.format(self.sinkname))
-
         content = self.rfile.read(int(self.headers['Content-Length'])).decode('UTF-8')
         self.send_response(200)
         message = bytes('OK', 'UTF-8')
@@ -35,20 +34,16 @@ class BaseBotRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(message)
         logger.debug('{}: connection closed'.format(self.sinkname))
-
         # parse requested path + query string
         _parsed = urlparse(self.path)
         path = _parsed.path
         query_string = parse_qs(_parsed.query)
-
         logger.debug("{}: incoming: {} {} {} bytes".format(self.sinkname, path, query_string, len(content)))
-
         # process the payload
         try:
             asyncio.async(
                 self.process_request(path, query_string, content)
             ).add_done_callback(lambda future: future.result())
-
         except Exception as e:
             logger.exception(e)
 
@@ -64,35 +59,29 @@ class BaseBotRequestHandler(BaseHTTPRequestHandler):
         """
         # parse incoming data
         payload = json.loads(content)
-
         path = path.split("/")
         conversation_id = path[1]
         if not conversation_id:
             logger.error("{}: conversation id must be provided as part of path".format(self.sinkname))
             return
-
         text = None
         if "echo" in payload:
             text = payload["echo"]
-
         image_data = None
         image_filename = None
         if "image" in payload:
             if "base64encoded" in payload["image"]:
                 image_raw = base64.b64decode(payload["image"]["base64encoded"])
                 image_data = io.BytesIO(image_raw)
-
             if "filename" in payload["image"]:
                 image_filename = payload["image"]["filename"]
             else:
                 image_type = imghdr.what('ignore', image_raw)
                 image_filename = str(int(time.time())) + "." + image_type
                 logger.info("automatic image filename: {}".format(image_filename))
-
         if not text and not image_data:
             logger.error("{}: nothing to send".format(self.sinkname))
             return
-
         yield from self.send_data(conversation_id, text, image_data=image_data, image_filename=image_filename)
 
     @asyncio.coroutine
@@ -106,13 +95,10 @@ class BaseBotRequestHandler(BaseHTTPRequestHandler):
             if not image_filename:
                 image_filename = str(int(time.time())) + ".jpg"
                 logger.warning("fallback image filename: {}".format(image_filename))
-
             image_id = yield from self._bot._client.upload_image(image_data, filename=image_filename)
-
         if not text and not image_id:
             logger.error("{}: nothing to send".format(self.sinkname))
             return
-
         yield from self._bot.coro_send_message(conversation_id, text, context=context, image_id=image_id)
 
     def log_error(self, format_string, *args):
@@ -139,52 +125,42 @@ class AsyncRequestHandler:
     @asyncio.coroutine
     def adapter_do_POST(self, request):
         raw_content = yield from request.content.read()
-
         results = yield from self.process_request(request.path,
                                                   parse_qs(request.query_string),
                                                   raw_content.decode("utf-8"))
-
         if results:
             content_type = "text/html"
             results = results.encode("ascii", "xmlcharrefreplace")
         else:
             content_type = "text/plain"
             results = "OK".encode('utf-8')
-
         return web.Response(body=results, content_type=content_type)
 
     @asyncio.coroutine
     def process_request(self, path, query_string, content):
         payload = json.loads(content)
-
         path = path.split("/")
         conversation_id = path[1]
         if not conversation_id:
             raise ValueError("conversation id must be provided in path")
-
         text = None
         if "echo" in payload:
             text = payload["echo"]
-
         image_data = None
         image_filename = None
         if "image" in payload:
             if "base64encoded" in payload["image"]:
                 image_raw = base64.b64decode(payload["image"]["base64encoded"])
                 image_data = io.BytesIO(image_raw)
-
             if "filename" in payload["image"]:
                 image_filename = payload["image"]["filename"]
             else:
                 image_type = imghdr.what('ignore', image_raw)
                 image_filename = str(int(time.time())) + "." + image_type
                 logger.info("automatic image filename: {}".format(image_filename))
-
         if not text and not image_data:
             raise ValueError("nothing to send")
-
         results = yield from self.send_data(conversation_id, text, image_data=image_data, image_filename=image_filename)
-
         return results
 
     @asyncio.coroutine
@@ -198,11 +174,8 @@ class AsyncRequestHandler:
             if not image_filename:
                 image_filename = str(int(time.time())) + ".jpg"
                 logger.warning("fallback image filename: {}".format(image_filename))
-
             image_id = yield from self.bot._client.upload_image(image_data, filename=image_filename)
-
         if not text and not image_id:
             raise ValueError("nothing to send")
-
         results = yield from self.bot.coro_send_message(conversation_id, text, context=context, image_id=image_id)
         return "OK"

@@ -13,7 +13,6 @@ def easteregg(bot, event, easteregg, eggcount=1, period=0.5, *args):
     supply three parameters: easter egg trigger name, number of times, period (in seconds).
     supported easter egg trigger name: ponies , pitchforks , bikeshed , shydino
     """
-
     for i in range(int(eggcount)):
         yield from bot._client.sendeasteregg(event.conv_id, easteregg)
         if int(eggcount) > 1:

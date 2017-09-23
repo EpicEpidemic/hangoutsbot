@@ -14,7 +14,6 @@ class IncomingMessages(IncomingRequestHandler):
     override 
         process_request()
         send_data() 
-
     more info: https://github.com/hangoutsbot/hangoutsbot/wiki/Sinks-(2.4-and-above)#reference-documentation
     """
     pass
@@ -22,7 +21,6 @@ class IncomingMessages(IncomingRequestHandler):
 
 def _initialise(bot):
     """config key "sample bridges must be defined for the bridge to initialise
-
     example format in config.json:
     "samplebridge": [
       {

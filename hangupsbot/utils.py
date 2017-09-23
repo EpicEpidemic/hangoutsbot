@@ -1,5 +1,7 @@
 # coding: utf-8
-import importlib, logging, unicodedata
+import importlib
+import logging
+import unicodedata
 
 import hangups
 
@@ -13,7 +15,6 @@ def text_to_segments(text):
     lines = text.replace('  ', ' \xa0').splitlines()
     if not lines:
         return []
-
     # Generate line segments
     segments = []
     for line in lines[:-1]:
@@ -22,7 +23,6 @@ def text_to_segments(text):
         segments.append(hangups.ChatMessageSegment('\n', hangups.SegmentType.LINE_BREAK))
     if lines[-1]:
         segments.append(hangups.ChatMessageSegment(lines[-1]))
-
     return segments
 
 

@@ -4,7 +4,6 @@ all these commands work on memory.json
 * creating, updating, removing a string in memory["unittest"]["timestamp"] (submemory test)
 * retrieving and setting taint status of memory
 """
-
 import logging
 import time
 

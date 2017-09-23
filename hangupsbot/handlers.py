@@ -17,10 +17,8 @@ class EventHandler:
     def __init__(self, bot, bot_command='/bot'):
         self.bot = bot
         self.bot_command = bot_command
-
         self._prefix_reprocessor = "uuid://"
         self._reprocessors = {}
-
         self.pluggables = {"allmessages": [],
                            "call": [],
                            "membership": [],
@@ -29,7 +27,6 @@ class EventHandler:
                            "sending": [],
                            "typing": [],
                            "watermark": []}
-
         bot.register_shared('reprocessor.attach_reprocessor',
                             self.attach_reprocessor,
                             forgiving=True)
@@ -45,11 +42,9 @@ class EventHandler:
                 raise RuntimeError("{} handler cannot be a coroutine".format(type))
         else:
             raise ValueError("unknown event type for handler: {}".format(type))
-
         current_plugin = plugins.tracking.current()
         self.pluggables[type].append((function, priority, current_plugin["metadata"]))
         self.pluggables[type].sort(key=lambda tup: tup[1])
-
         plugins.tracking.register_handler(function, type, priority)
 
     def register_reprocessor(self, callable):
@@ -79,25 +74,21 @@ class EventHandler:
         """
         logger.debug("[LEGACY] plugins.register_shared()"
                      " instead of handlers.register_object()")
-
         self.bot.register_shared(id, objectref, forgiving=forgiving)
 
     def register_user_command(self, command_names):
         logger.debug("[LEGACY] plugins.register_user_command()"
                      " instead of handlers.register_user_command()")
-
         plugins.register_user_command(command_names)
 
     def register_admin_command(self, command_names):
         logger.debug("[LEGACY] plugins.register_admin_command()"
                      " instead of handlers.register_admin_command()")
-
         plugins.register_admin_command(command_names)
 
     def get_admin_commands(self, conversation_id):
         logger.debug("[LEGACY] command.get_admin_commands()"
                      " instead of handlers.get_admin_commands()")
-
         return command.get_admin_commands(self.bot, conversation_id)
 
     """handler core"""
@@ -121,7 +112,6 @@ class EventHandler:
                 event.from_bot = True
             else:
                 event.from_bot = False
-
             """reprocessor - process event with hidden context from handler.attach_reprocessor()"""
             if len(event.conv_event.segments) > 0:
                 for segment in event.conv_event.segments:
@@ -129,7 +119,6 @@ class EventHandler:
                         if segment.link_target.startswith(self._prefix_reprocessor):
                             _id = segment.link_target[len(self._prefix_reprocessor):]
                             yield from self.run_reprocessor(_id, event)
-
             """auto opt-in - opted-out users who chat with the bot will be opted-in again"""
             if not event.from_bot and self.bot.conversations.catalog[event.conv_id]["type"] == "ONE_TO_ONE":
                 if self.bot.memory.exists(["user_data", event.user.id_.chat_id, "optout"]):
@@ -138,7 +127,6 @@ class EventHandler:
                         yield from command.run(self.bot, event, *["optout"])
                         logger.info("auto opt-in for {}".format(event.user.id_.chat_id))
                         return
-
             yield from self.run_pluggable_omnibus("allmessages", self.bot, event, command)
             if not event.from_bot:
                 yield from self.run_pluggable_omnibus("message", self.bot, event, command)
@@ -147,22 +135,17 @@ class EventHandler:
     @asyncio.coroutine
     def handle_command(self, event):
         """Handle command messages"""
-
         # is commands_enabled?
-
         config_commands_enabled = self.bot.get_config_suboption(event.conv_id, 'commands_enabled')
         tagged_ignore = "ignore" in self.bot.tags.useractive(event.user_id.chat_id, event.conv_id)
-
         if not config_commands_enabled or tagged_ignore:
             admins_list = self.bot.get_config_suboption(event.conv_id, 'admins') or []
             # admins always have commands enabled
             if event.user_id.chat_id not in admins_list:
                 return
-
         # ensure bot alias is always a list
         if not isinstance(self.bot_command, list):
             self.bot_command = [self.bot_command]
-
         # check that a bot alias is used e.g. /bot
         if not event.text.split()[0].lower() in self.bot_command:
             if self.bot.conversations.catalog[event.conv_id]["type"] == "ONE_TO_ONE" and self.bot.get_config_option(
@@ -170,7 +153,6 @@ class EventHandler:
                 event.text = u" ".join((self.bot_command[0], event.text))  # Insert default alias if not already present
             else:
                 return
-
         # Parse message
         event.text = event.text.replace(u'\xa0', u' ')  # convert non-breaking space in Latin1 (ISO 8859-1)
         try:
@@ -180,7 +162,6 @@ class EventHandler:
             yield from self.bot.coro_send_message(event.conv, _("{}: {}").format(
                 event.user.full_name, str(e)))
             return
-
         # Test if command length is sufficient
         if len(line_args) < 2:
             config_silent = bot.get_config_suboption(event.conv.id_, 'silentmode')
@@ -189,9 +170,7 @@ class EventHandler:
                 yield from self.bot.coro_send_message(event.conv, _('{}: Missing parameter(s)').format(
                     event.user.full_name))
             return
-
         commands = command.get_available_commands(self.bot, event.user.id_.chat_id, event.conv_id)
-
         supplied_command = line_args[1].lower()
         if supplied_command in commands["user"]:
             pass
@@ -203,10 +182,8 @@ class EventHandler:
         else:
             yield from command.unknown_command(self.bot, event, *line_args[1:])
             return
-
         # Run command
         results = yield from command.run(self.bot, event, *line_args[1:])
-
         if "acknowledge" in dir(event):
             for id in event.acknowledge:
                 yield from self.run_reprocessor(id, event, results)
@@ -245,7 +222,6 @@ class EventHandler:
                         name,
                         plugin_metadata["module.path"],
                         function.__name__)]
-
                     try:
                         """accepted handler signatures:
                         coroutine(bot, event, command)
@@ -275,12 +251,10 @@ class EventHandler:
                     except:
                         message = " : ".join(message)
                         logger.exception(message)
-
             except self.bot.Exceptions.SuppressAllHandlers:
                 # skip all other pluggables, but let the event continue
                 message.append("SuppressAllHandlers")
                 logger.debug(" : ".join(message))
-
             except:
                 raise
 
@@ -294,7 +268,6 @@ class HandlerBridge:
 
     def register(self, *args, priority=10, event=None):
         """Decorator for registering event handler"""
-
         # make compatible with this bot fork
         scaled_priority = priority * 10  # scale for compatibility - xmikos range 1 - 10
         if event is hangups.ChatMessageEvent:

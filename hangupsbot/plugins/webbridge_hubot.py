@@ -1,7 +1,8 @@
-import aiohttp
 import asyncio
 import json
 import logging
+
+import aiohttp
 from webbridge import WebFramework, IncomingRequestHandler
 
 logger = logging.getLogger(__name__)
@@ -13,19 +14,14 @@ class BridgeInstance(WebFramework):
         if event.from_bot:
             # don't send my own messages
             return
-
         event_timestamp = event.timestamp
-
         conversation_id = event.conv_id
         conversation_text = event.text
-
         user_full_name = event.user.full_name
         user_id = event.user_id
-
         url = config["HUBOT_URL"] + conversation_id
         payload = {"from": str(user_id.chat_id), "message": conversation_text}
         headers = {'content-type': 'application/json'}
-
         connector = aiohttp.TCPConnector(verify_ssl=False)
         asyncio.async(
             aiohttp.request('post', url, data=json.dumps(payload), headers=headers, connector=connector)
@@ -40,9 +36,7 @@ class IncomingMessages(IncomingRequestHandler):
         if conversation_id is None:
             logger.error("conversation id must be provided as part of path")
             return
-
         payload = json.loads(content)
-
         yield from self.send_data(conversation_id, payload["message"])
 
 

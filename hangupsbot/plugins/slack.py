@@ -9,7 +9,6 @@ config.json will have to be configured as follows:
   "synced_conversations": ["CONV_ID1", "CONV_ID2"],
   "otr_privacy" : true/false
 }]
-
 You can (theoretically) set up as many slack sinks per bot as you like, by extending the list"""
 import asyncio
 import json
@@ -37,14 +36,11 @@ def _initialise(bot):
 def _start_slack_sinks(bot):
     # Start and asyncio event loop
     loop = asyncio.get_event_loop()
-
     slack_sink = bot.get_config_option('slack')
     itemNo = -1
-
     if isinstance(slack_sink, list):
         for sinkConfig in slack_sink:
             itemNo += 1
-
             try:
                 certfile = sinkConfig["certfile"]
                 if not certfile:
@@ -55,9 +51,7 @@ def _start_slack_sinks(bot):
             except KeyError as e:
                 logger.error("config.slack[{}] missing keyword".format(itemNo), e)
                 continue
-
             aiohttp_start(bot, name, port, certfile, SlackAsyncListener, group=__name__)
-
     logger.info("{} slack listeners started".format(itemNo + 1))
 
 
@@ -75,24 +69,20 @@ def _slack_repeater_cleaner(bot, event, id):
 class SlackAsyncListener(AsyncRequestHandler):
     def process_request(self, path, query_string, content):
         payload = parse_qs(content)
-
         path = path.split("/")
         conversation_id = path[1]
         if not conversation_id:
             raise ValueError("conversation id must be provided in path")
-
         if "text" in payload:
             try:
                 text = emoji.emojize(str(payload["text"][0]), use_aliases=True)
             except NameError:  # emoji library likely missing
                 text = str(payload["text"][0])
-
             if "user_name" in payload:
                 if "slackbot" not in str(payload["user_name"][0]):
                     text = self._remap_internal_slack_ids(text)
                     response = "<b>" + str(payload["user_name"][0]) + ":</b> " + unescape(text)
                     response += self._bot.call_shared("reprocessor.attach_reprocessor", _slack_repeater_cleaner)
-
                     yield from self.send_data(conversation_id,
                                               response,
                                               context={'base': {
@@ -127,7 +117,6 @@ class SlackAsyncListener(AsyncRequestHandler):
         # hacky way to get the first token:
         slack_sink_configuration = self._bot.get_config_option('slack')
         token = slack_sink_configuration[0]["key"]
-
         prefix = "?"
         if type_str == "user":
             url = 'https://slack.com/api/users.info?token=' + token + '&user=' + id
@@ -137,7 +126,6 @@ class SlackAsyncListener(AsyncRequestHandler):
             prefix = "#"
         else:
             raise ValueError('unknown label type_str')
-
         label = "UNKNOWN"
         if id in self._slack_cache[type_str]:
             label = self._slack_cache[type_str][id]
@@ -151,10 +139,8 @@ class SlackAsyncListener(AsyncRequestHandler):
                     label = data[type_str]["name"]
                     self._slack_cache[type_str][id] = label
                     logger.debug("slack label resolved from API: {} = {}".format(id, label))
-
             except Exception as e:
                 logger.exception("FAILED to resolve slack label for {}".format(id))
-
         return prefix + label
 
 
@@ -162,19 +148,14 @@ class SlackAsyncListener(AsyncRequestHandler):
 def _handle_slackout(bot, event, command):
     if "_slack_no_repeat" in dir(event) and event._slack_no_repeat:
         return
-
     """forward messages to slack over webhook"""
-
     slack_sink = bot.get_config_option('slack')
-
     if isinstance(slack_sink, list):
         for sinkConfig in slack_sink:
-
             try:
                 slackkey = sinkConfig["key"]
                 channel = sinkConfig["channel"]
                 convlist = sinkConfig["synced_conversations"]
-
                 if event.conv_id in convlist:
                     fullname = event.user.full_name
                     response = yield from bot._client.getentitybyid([event.user_id.chat_id])
@@ -183,23 +164,18 @@ def _handle_slackout(bot, event, command):
                     except Exception as e:
                         logger.exception("FAILED to acquire photo_url for {}".format(fullname))
                         photo_url = None
-
                     try:
                         client = SlackClient(slackkey, verify=True)
                     except TypeError:
                         client = SlackClient(slackkey)
-
                     slack_api_params = {'username': fullname,
                                         'icon_url': photo_url}
-
                     if "link_names" not in sinkConfig or sinkConfig["link_names"]:
                         logger.debug("slack api link_names is active")
                         slack_api_params["link_names"] = 1
-
                     if bot.conversations.catalog[event.conv_id]["history"] or "otr_privacy" not in sinkConfig or not \
-                    sinkConfig["otr_privacy"]:
+                            sinkConfig["otr_privacy"]:
                         client.chat_post_message(channel, event.text, **slack_api_params)
-
             except Exception as e:
                 logger.exception("Could not handle slackout with key {} between {} and {}."
                                  " Is config.json properly configured?".format(slackkey,
@@ -214,13 +190,11 @@ def slackusers(bot, event, *args):
             slackkey = sinkConfig["key"]
             channel = sinkConfig["channel"]
             convlist = sinkConfig["synced_conversations"]
-
             if event.conv_id in convlist:
                 try:
                     client = SlackClient(slackkey, verify=True)
                 except TypeError:
                     client = SlackClient(slackkey)
-
                 chan_id = client.channel_name_to_id(channel)
                 slack_api_params = {'channel': chan_id}
                 info = client._make_request('channels.info', slack_api_params)
@@ -234,10 +208,7 @@ def slackusers(bot, event, *args):
                         username = user['user']['name']
                         realname = user['user'].get('real_name', "No real name")
                         users[username] = realname
-
                 msg += "\n{} members:".format(len(users))
-
                 for username, realname in sorted(users.items()):
                     msg += "\n  {}: {}".format(username, realname)
-
                 yield from bot.coro_send_message(event.conv, msg)

@@ -6,7 +6,6 @@ import plugins
 from textblob import TextBlob
 
 logger = logging.getLogger(__name__)
-
 gs = goslate.Goslate()
 
 
@@ -55,11 +54,8 @@ def roomlanguage(bot, event, *args):
     supply parameter as either ISO639-1 2-letter language code or fulltext/fragment of language
     to set (e.g. "chinese", "hebr", "swahili", etc).
     """
-
     language_map = gs.get_languages()
-
     language = " ".join(args)
-
     if not language:
         try:
             yield from bot.coro_send_message(
@@ -70,7 +66,6 @@ def roomlanguage(bot, event, *args):
         except KeyError:
             pass
         return
-
     for iso_language in language_map:
         text_language = language_map[iso_language]
         if language.lower() in text_language.lower() or language == iso_language.upper():

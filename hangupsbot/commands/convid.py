@@ -24,7 +24,6 @@ def get_posix_args(rawargs):
 def convfilter(bot, event, *args):
     """test filter and return matched conversations"""
     posix_args = get_posix_args(args)
-
     if len(posix_args) > 1:
         yield from bot.coro_send_message(event.conv_id,
                                          _(
@@ -39,16 +38,13 @@ def convfilter(bot, event, *args):
             lines.append("`{}` <b>{}</b> ({})".format(convid, convdata["title"], len(convdata["participants"])))
         lines.append(_('<b>Total: {}</b>').format(len(lines)))
         message = '<br />'.join(lines)
-
         yield from bot.coro_send_message(event.conv_id, message)
-
         return {"api.response": message}
 
 
 def convecho(bot, event, *args):
     """echo back text into filtered conversations"""
     posix_args = get_posix_args(args)
-
     if (len(posix_args) > 1):
         if not posix_args[0]:
             """block spamming ALL conversations"""
@@ -72,11 +68,9 @@ def convecho(bot, event, *args):
         """general error"""
         text = _("<em>required parameters: convfilter text</em>")
         convlist = bot.conversations.get(filter=event.conv_id)
-
     if not convlist:
         text = _("<em>no conversations filtered</em>")
         convlist = bot.conversations.get(filter=event.conv_id)
-
     for convid, convdata in convlist.items():
         yield from bot.coro_send_message(convid, text)
 
@@ -84,7 +78,6 @@ def convecho(bot, event, *args):
 def convrename(bot, event, *args):
     """renames a single specified conversation"""
     posix_args = get_posix_args(args)
-
     if len(posix_args) > 1:
         if not posix_args[0].startswith(("id:", "text:")):
             # always force explicit search for single conversation on vague user request
@@ -108,7 +101,6 @@ def convrename(bot, event, *args):
 def convusers(bot, event, *args):
     """gets list of users for specified conversation filter"""
     posix_args = get_posix_args(args)
-
     if len(posix_args) != 1:
         message = _("<em>should be 1 parameter, {} supplied</em>".format(len(posix_args)))
     elif not posix_args[0]:
@@ -133,16 +125,13 @@ def convusers(bot, event, *args):
             lines.append(_('<b>Users: {}</b>').format(len(convdata["participants"])))
             chunks.append('<br />'.join(lines))
         message = '<br /><br />'.join(chunks)
-
     yield from bot.coro_send_message(event.conv_id, message)
-
     return {"api.response": message}
 
 
 def convleave(bot, event, *args):
     """leave specified conversation(s)"""
     posix_args = get_posix_args(args)
-
     if (len(posix_args) >= 1):
         if not posix_args[0]:
             """block leaving ALL conversations"""
@@ -156,21 +145,17 @@ def convleave(bot, event, *args):
         yield from bot.coro_send_message(event.conv_id,
                                          _("<em>required parameters: convfilter</em>"))
         return
-
     for convid, convdata in convlist.items():
         if convdata["type"] == "GROUP":
             if not "quietly" in posix_args:
                 yield from bot.coro_send_message(convid, _('I\'ll be back!'))
-
             try:
                 yield from bot._client.removeuser(convid)
                 if convid in bot._conv_list._conv_dict:
                     # replicate hangups behaviour - remove conversation from internal dict
                     del bot._conv_list._conv_dict[convid]
                 bot.conversations.remove(convid)
-
             except hangups.NetworkError as e:
                 logging.exception("CONVLEAVE: error leaving {} {}".format(convid, convdata["title"]))
-
         else:
             logging.warning("CONVLEAVE: cannot leave {} {} {}".format(convdata["type"], convid, convdata["title"]))

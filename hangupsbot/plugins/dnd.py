@@ -24,7 +24,6 @@ def _migrate_dnd_config_to_memory(bot):
         bot.memory.save()
         bot.config.save()
         logger.debug("list migrated to memory")
-
     # migrate memory.json DND to structure with more metadata
     if bot.memory.exists(["donotdisturb"]):
         donotdisturb = bot.memory.get("donotdisturb")
@@ -44,20 +43,16 @@ def _migrate_dnd_config_to_memory(bot):
 def dnd(bot, event, *args):
     """allow users to toggle DND for ALL conversations (i.e. no @mentions)
         /bot dnd"""
-
     # ensure dndlist is initialised
     if not bot.memory.exists(["donotdisturb"]):
         bot.memory["donotdisturb"] = {}
-
     if len(args) == 1 and args[0].isdigit():
         # assume hours supplied
         seconds_to_expire = int(args[0]) * 3600
     else:
         seconds_to_expire = 6 * 3600  # default: 6-hours expiry
-
     if seconds_to_expire > 259200:
         seconds_to_expire = 259200  # max: 3 days (72 hours)
-
     initiator_chat_id = event.user.id_.chat_id
     donotdisturb = bot.memory.get("donotdisturb")
     if initiator_chat_id in donotdisturb:
@@ -67,10 +62,8 @@ def dnd(bot, event, *args):
             "created": time.time(),
             "expiry": seconds_to_expire
         }
-
     bot.memory["donotdisturb"] = donotdisturb
     bot.memory.save()
-
     if bot.call_shared("dnd.user_check", initiator_chat_id):
         yield from bot.coro_send_message(
             event.conv,
@@ -91,7 +84,6 @@ def _expire_DNDs(bot):
         time_expiry = metadata["created"] + metadata["expiry"]
         if time.time() < time_expiry:
             _dict[user_id] = metadata
-
     if len(_dict) < len(donotdisturb):
         # some entries expired
         bot.memory.set_by_path(["donotdisturb"], _dict)

@@ -10,14 +10,11 @@ def _initialise(bot):
 def remindme(bot, event, dly, *args):
     """
     Posts a custom message to a 1on1 after a delay
-
     /bot remindme <b>delay (minutes)</b> <i>Message</i>
     """
-
     if not args:
         yield from bot.coro_send_message(event.conv, _("Usage: /bot remindme <b>delay (minutes)</b> <i>Message</i>"))
         return
-
     try:
         delayTime = float(dly) * 60.0
         yield from bot.coro_send_message(event.conv,
@@ -32,14 +29,11 @@ def remindme(bot, event, dly, *args):
 def remindall(bot, event, dly, *args):
     """
     Posts a custom message to the chat after a delay
-
     /bot remindall <b>delay (minutes)</b> <i>Message</i>
     """
-
     if not args:
         yield from bot.coro_send_message(event.conv, _("Usage: /bot remindall <b>delay (minutes)</b> <i>Message</i>"))
         return
-
     try:
         delayTime = float(dly) * 60.0
         yield from bot.coro_send_message(event.conv, _("Public reminder in {}m").format(dly))

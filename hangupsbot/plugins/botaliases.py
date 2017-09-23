@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 
 def _initialise(bot):
     """load in bot aliases from memory, create defaults if none"""
-
     if bot.memory.exists(["bot.command_aliases"]):
         bot_command_aliases = bot.memory.get("bot.command_aliases")
     else:
@@ -22,27 +21,20 @@ def _initialise(bot):
             bot_command_aliases.append(alias_firstname)
         # /<chat_id>
         bot_command_aliases.append("/" + myself["chat_id"])
-
         bot.memory.set_by_path(["bot.command_aliases"], bot_command_aliases)
         bot.memory.save()
-
     if not isinstance(bot_command_aliases, list):
         bot_command_aliases = []
-
     if len(bot_command_aliases) == 0:
         bot.append("/bot")
-
     bot._handlers.bot_command = bot_command_aliases
     logger.info("aliases: {}".format(bot_command_aliases))
-
     plugins.register_user_command(["botalias"])
-
     return []
 
 
 def botalias(bot, event, *args):
     """shows, adds and removes bot command aliases"""
-
     if len(args) == 0:
         yield from bot.coro_send_message(
             event.conv,
@@ -61,16 +53,12 @@ def botalias(bot, event, *args):
                 if args[0].lower() == "remove":
                     for _alias in args[1:]:
                         _aliases.remove(_alias.lower())
-
             if _aliases != bot._handlers.bot_command:
                 if len(_aliases) == 0:
                     _aliases = ["/bot"]
-
                 bot.memory.set_by_path(["bot.command_aliases"], _aliases)
                 bot.memory.save()
-
                 bot._handlers.bot_command = _aliases
-
             botalias(bot, event)  # run with no arguments
         else:
             yield from bot.coro_send_message(

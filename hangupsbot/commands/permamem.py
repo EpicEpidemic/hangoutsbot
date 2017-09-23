@@ -28,7 +28,6 @@ def dumpconv(bot, event, *args):
 def dumpunknownusers(bot, event, *args):
     """lists cached users records with full name, first name as unknown, and is_definitive"""
     logger.info("dumpunknownusers started")
-
     if bot.memory.exists(["user_data"]):
         for chat_id in bot.memory["user_data"]:
             if "_hangups" in bot.memory["user_data"][chat_id]:
@@ -36,16 +35,13 @@ def dumpunknownusers(bot, event, *args):
                 if _hangups["is_definitive"]:
                     if _hangups["full_name"].upper() == "UNKNOWN" and _hangups["full_name"] == _hangups["first_name"]:
                         logger.info("dumpunknownusers {}".format(_hangups))
-
     logger.info("dumpunknownusers finished")
-
     yield from bot.coro_send_message(event.conv, "<b>please see log/console</b>")
 
 
 def resetunknownusers(bot, event, *args):
     """resets cached users records with full name, first name as unknown, and is_definitive"""
     logger.info("resetunknownusers started")
-
     if bot.memory.exists(["user_data"]):
         for chat_id in bot.memory["user_data"]:
             if "_hangups" in bot.memory["user_data"][chat_id]:
@@ -55,9 +51,7 @@ def resetunknownusers(bot, event, *args):
                         logger.info("resetunknownusers {}".format(_hangups))
                         bot.memory.set_by_path(["user_data", chat_id, "_hangups", "is_definitive"], False)
     bot.memory.save()
-
     logger.info("resetunknownusers finished")
-
     yield from bot.coro_send_message(event.conv, "<b>please see log/console</b>")
 
 
@@ -67,7 +61,6 @@ def refreshusermemory(bot, event, *args):
     updated = yield from bot.conversations.get_users_from_query(args)
     logger.info("refreshusermemory {} updated".format(updated))
     logger.info("refreshusermemory ended")
-
     yield from bot.coro_send_message(event.conv, "<b>please see log/console</b>")
 
 
@@ -78,14 +71,12 @@ def removeconvrecord(bot, event, *args):
         for conv_id in args:
             bot.conversations.remove(conv_id)
     logger.info("resetunknownusers finished")
-
     yield from bot.coro_send_message(event.conv, "<b>please see log/console</b>")
 
 
 def makeallusersindefinite(bot, event, *args):
     """turn off the is_definite flag for all users"""
     logger.info("makeallusersindefinite started")
-
     if bot.memory.exists(["user_data"]):
         for chat_id in bot.memory["user_data"]:
             if "_hangups" in bot.memory["user_data"][chat_id]:
@@ -93,7 +84,5 @@ def makeallusersindefinite(bot, event, *args):
                 if _hangups["is_definitive"]:
                     bot.memory.set_by_path(["user_data", chat_id, "_hangups", "is_definitive"], False)
     bot.memory.save()
-
     logger.info("makeallusersindefinite finished")
-
     yield from bot.coro_send_message(event.conv, "<b>please see log/console</b>")

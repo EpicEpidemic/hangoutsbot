@@ -10,5 +10,4 @@ def geticon(bot, event, *args):
         photo_url = "http:" + response.entities[0].properties.photo_url
     except Exception as e:
         logger.exception("{} {} {}".format(event.user_id.chat_id, e, response))
-
     yield from bot.coro_send_message(event.conv_id, photo_url)

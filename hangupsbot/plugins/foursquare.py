@@ -1,9 +1,9 @@
+import asyncio
 import json
+import logging
 import urllib.parse
 import urllib.request
 
-import asyncio
-import logging
 import plugins
 
 logger = logging.getLogger(__name__)
@@ -19,10 +19,8 @@ def foursquareid(bot, event, clid):
     '''Set the Foursquare API key for the bot - get one from https://foursquare.com/oauth'''
     if not bot.memory.exists(["foursquare"]):
         bot.memory.set_by_path(["foursquare"], {})
-
     if not bot.memory.exists(["foursquare"]):
         bot.memory.set_by_path(["foursquare", "id"], {})
-
     bot.memory.set_by_path(["foursquare", "id"], clid)
     yield from bot.coro_send_message(event.conv, "Foursquare client id set to {}".format(clid))
     return
@@ -33,10 +31,8 @@ def foursquaresecret(bot, event, secret):
     '''Set the Foursquare client secret for your bot - get it from https://foursquare.com/oauth'''
     if not bot.memory.exists(["foursquare"]):
         bot.memory.set_by_path(["foursquare"], {})
-
     if not bot.memory.exists(["foursquare"]):
         bot.memory.set_by_path(["foursquare", "secret"], {})
-
     bot.memory.set_by_path(["foursquare", "secret"], secret)
     yield from bot.coro_send_message(event.conv, "Foursquare client secret set to {}".format(secret))
     return
@@ -52,7 +48,6 @@ def getplaces(location, clid, secret, section=None):
         pass
     else:
         return None
-
     try:
         req = urllib.request.urlopen(url)
     except urllib.error.URLError as e:
@@ -62,7 +57,6 @@ def getplaces(location, clid, secret, section=None):
         logger.info("CLIENT_SECRET: {}".format(secret))
         return "<i><b>Foursquare Error</b>: {}</i>".format(json.loads(e.read().decode("utf8"))['meta']['errorDetail'])
     data = json.loads(req.read().decode("utf-8"))
-
     if section in types:
         places = ["Showing {} places near {}.<br>".format(section, data['response']['geocode']['displayString'])]
     else:
@@ -84,7 +78,6 @@ def getplaces(location, clid, secret, section=None):
                                                                                                               location[
                                                                                                                   'venue'][
                                                                                                                   'ratingSignals']))
-
     response = "<br>".join(places)
     return response
 
@@ -96,7 +89,6 @@ def foursquare(bot, event, *args):
   <b>/bot foursquare [type] <location></b>: Display up to 10 places near the provided location of the type specified. <i>Valid types: food, drinks, coffee, shops, arts, outdoors, sights, trending, specials</i>'''
     if len(args) == 0:
         return
-
     try:
         clid = bot.memory.get_by_path(["foursquare", "id"])
         secret = bot.memory.get_by_path(["foursquare", "secret"])
@@ -104,13 +96,11 @@ def foursquare(bot, event, *args):
         yield from bot.coro_send_message(event.conv,
                                          "Something went wrong - make sure the Foursquare plugin is correctly configured.")
         return
-
     types = ["food", "drinks", "coffee", "shops", "arts", "outdoors", "sights", "trending", "specials"]
     if args[0] in types:
         places = getplaces(urllib.parse.quote(" ".join(args[1:])), clid, secret, args[0])
     else:
         places = getplaces(urllib.parse.quote(" ".join(args)), clid, secret)
-
     if places:
         yield from bot.coro_send_message(event.conv, places)
     else:

@@ -1,7 +1,6 @@
 """
 example plugin which demonstrates user and conversation memory
 """
-
 import plugins
 
 
@@ -13,7 +12,6 @@ def rememberme(bot, event, *args):
     """remember value for current user, memory must be empty.
     use /bot forgetme to clear previous storage
     """
-
     text = bot.user_memory_get(event.user.id_.chat_id, 'test_memory')
     if text is None:
         bot.user_memory_set(event.user.id_.chat_id, 'test_memory', ' '.join(args))
@@ -30,7 +28,6 @@ def rememberme(bot, event, *args):
 
 def whatme(bot, event, *args):
     """reply with value stored for current user"""
-
     text = bot.user_memory_get(event.user.id_.chat_id, 'test_memory')
     if text is None:
         yield from bot.coro_send_message(
@@ -46,7 +43,6 @@ def whatme(bot, event, *args):
 
 def forgetme(bot, event, *args):
     """forget stored value for current user"""
-
     text = bot.user_memory_get(event.user.id_.chat_id, 'test_memory')
     if text is None:
         yield from bot.coro_send_message(
@@ -68,7 +64,6 @@ def rememberchat(bot, event, *args):
     """remember value for current conversation, memory must be empty.
     use /bot forgetchat to clear previous storage
     """
-
     text = bot.conversation_memory_get(event.conv_id, 'test_memory')
     if text is None:
         bot.conversation_memory_set(event.conv_id, 'test_memory', ' '.join(args))
@@ -85,7 +80,6 @@ def rememberchat(bot, event, *args):
 
 def whatchat(bot, event, *args):
     """reply with stored value for current conversation"""
-
     text = bot.conversation_memory_get(event.conv_id, 'test_memory')
     if text is None:
         yield from bot.coro_send_message(
@@ -101,7 +95,6 @@ def whatchat(bot, event, *args):
 
 def forgetchat(bot, event, *args):
     """forget stored value for current conversation"""
-
     text = bot.conversation_memory_get(event.conv_id, 'test_memory')
     if text is None:
         yield from bot.coro_send_message(

@@ -28,14 +28,10 @@ def _handle_keyword(bot, event, command, include_event_user=False):
     """handle keyword"""
     if event.user.is_self:
         return
-
     _populate_keywords(bot, event)
-
     users_in_chat = event.conv.users
-
     """check if synced room and syncing is enabled
     if its a valid syncroom, get a list of all unique users across all rooms"""
-
     if bot.get_config_option('syncing_enabled'):
         syncouts = bot.get_config_option('sync_rooms') or []
         for sync_room_list in syncouts:
@@ -44,7 +40,6 @@ def _handle_keyword(bot, event, command, include_event_user=False):
                     if event.conv_id not in syncedroom:
                         users_in_chat += bot.get_users_in_conversation(syncedroom)
                 users_in_chat = list(set(users_in_chat))  # make unique
-
     event_text = re.sub(r"\s+", " ", event.text)
     event_text_lower = event.text.lower()
     for user in users_in_chat:
@@ -55,7 +50,6 @@ def _handle_keyword(bot, event, command, include_event_user=False):
                 for phrase in _internal.keywords[chat_id]:
                     regexphrase = r"(^|\b| )" + re.escape(phrase) + r"($|\b)"
                     if re.search(regexphrase, event_text, re.IGNORECASE):
-
                         """XXX: suppress alerts if it appears to be a valid mention to same user
                         logic condensed from the detection function in the mentions plugin, we may
                         miss some use-cases, but this should account for "most" of them"""
@@ -79,7 +73,6 @@ def _handle_keyword(bot, event, command, include_event_user=False):
                                         logger.debug(
                                             "subscription matched exact nickname {}, skipping".format(_nickname))
                                         continue
-
                         yield from _send_notification(bot, event, phrase, user)
         except KeyError:
             # User probably hasn't subscribed to anything
@@ -94,7 +87,6 @@ def _populate_keywords(bot, event):
             userkeywords = []
             if bot.memory.exists(["user_data", userchatid, "keywords"]):
                 userkeywords = bot.memory.get_by_path(["user_data", userchatid, "keywords"])
-
             if userkeywords:
                 _internal.keywords[userchatid] = userkeywords
             else:
@@ -104,16 +96,13 @@ def _populate_keywords(bot, event):
 @asyncio.coroutine
 def _send_notification(bot, event, phrase, user):
     """Alert a user that a keyword that they subscribed to has been used"""
-
     conversation_name = bot.conversations.get_name(event.conv)
     logger.info("keyword '{}' in '{}' ({})".format(phrase, conversation_name, event.conv.id_))
-
     """support for reprocessor
     override the source name by defining event._external_source"""
     source_name = event.user.full_name
     if hasattr(event, '_external_source'):
         source_name = event._external_source
-
     """send alert with 1on1 conversation"""
     conv_1on1 = yield from bot.get_1to1(user.id_.chat_id, context={'initiator_convid': event.conv_id})
     if conv_1on1:
@@ -139,16 +128,13 @@ def _send_notification(bot, event, phrase, user):
 def subscribe(bot, event, *args):
     """allow users to subscribe to phrases, only one input at a time"""
     _populate_keywords(bot, event)
-
     keyword = ' '.join(args).strip().lower()
     keyword = re.sub(r"\s+", " ", keyword)
-
     conv_1on1 = yield from bot.get_1to1(event.user.id_.chat_id)
     if not conv_1on1:
         yield from bot.coro_send_message(
             event.conv,
             _("Note: I am unable to ping you until you start a 1 on 1 conversation with me!"))
-
     if not keyword:
         yield from bot.coro_send_message(
             event.conv, _("Usage: /bot subscribe [keyword]"))
@@ -157,7 +143,6 @@ def subscribe(bot, event, *args):
                 event.conv,
                 _("Subscribed to: {}").format(', '.join(_internal.keywords[event.user.id_.chat_id])))
         return
-
     if event.user.id_.chat_id in _internal.keywords:
         if keyword in _internal.keywords[event.user.id_.chat_id]:
             # Duplicate!
@@ -182,12 +167,10 @@ def subscribe(bot, event, *args):
             event.conv,
             _(
                 "Note: You will not be able to trigger your own subscriptions. To test, please ask somebody else to test this for you."))
-
     # Save to file
     bot.memory.set_by_path(["user_data", event.user.id_.chat_id, "keywords"],
                            _internal.keywords[event.user.id_.chat_id])
     bot.memory.save()
-
     yield from bot.coro_send_message(
         event.conv,
         _("Subscribed to: {}").format(', '.join(_internal.keywords[event.user.id_.chat_id])))
@@ -196,10 +179,8 @@ def subscribe(bot, event, *args):
 def unsubscribe(bot, event, *args):
     """Allow users to unsubscribe from phrases"""
     _populate_keywords(bot, event)
-
     keyword = ' '.join(args).strip().lower()
     keyword = re.sub(r"\s+", " ", keyword)
-
     if not keyword:
         yield from bot.coro_send_message(
             event.conv, _("Unsubscribing all keywords"))
@@ -211,7 +192,6 @@ def unsubscribe(bot, event, *args):
     else:
         yield from bot.coro_send_message(
             event.conv, _("Error: keyword not found"))
-
     # Save to file
     bot.memory.set_by_path(["user_data", event.user.id_.chat_id, "keywords"],
                            _internal.keywords[event.user.id_.chat_id])
