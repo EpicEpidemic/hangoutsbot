@@ -50,8 +50,8 @@ from websocket import WebSocketConnectionClosedException
 
 logger = logging.getLogger(__name__)
 # fix for simple_smile support
-emoji.EMOJI_UNICODE[':simple_smile:'] = emoji.EMOJI_UNICODE[':white_smiling_face:']
-emoji.EMOJI_ALIAS_UNICODE[':simple_smile:'] = emoji.EMOJI_UNICODE[':white_smiling_face:']
+# emoji.EMOJI_UNICODE[':simple_smile:'] = emoji.EMOJI_UNICODE[':white_smiling_face:']
+# emoji.EMOJI_ALIAS_UNICODE[':simple_smile:'] = emoji.EMOJI_UNICODE[':white_smiling_face:']
 
 
 def chatMessageEvent2SlackText(event):
