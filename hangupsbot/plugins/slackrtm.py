@@ -1148,7 +1148,10 @@ class SlackRTM(object):
             if sync.hotag:
                 fullname = '%s (%s)' % (fullname, sync.hotag)
             try:
-                photo_url = "http:" + self.bot._user_list.get_user(event.user_id).photo_url
+                if self.bot._user_list.get_user(event.user_id).photo_url is None:
+                    photo_url = ''
+                else:
+                    photo_url = "http:" + self.bot._user_list.get_user(event.user_id).photo_url
             except Exception as e:
                 logger.exception('error while getting user from bot: %s', e)
                 photo_url = ''
