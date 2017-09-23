@@ -8,7 +8,7 @@ import time
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-from utils import simple_parse_to_segments
+from parsers import simple_parse_to_segments
 
 
 class webhookReceiver(BaseHTTPRequestHandler):

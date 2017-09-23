@@ -24,7 +24,8 @@ from event import (TypingEvent, WatermarkEvent, ConversationEvent)
 from exceptions import HangupsBotExceptions
 from hangups.schemas import OffTheRecordStatus
 from hangups_conversation import (HangupsConversation, FakeConversation)
-from utils import simple_parse_to_segments, class_from_name
+from utils import class_from_name
+from parsers import simple_parse_to_segments
 
 gettext.install('hangupsbot', localedir=os.path.join(os.path.dirname(__file__), 'locale'))
 

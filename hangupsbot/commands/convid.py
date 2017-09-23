@@ -4,7 +4,7 @@ import shlex
 import hangups
 import plugins
 from commands import command
-from utils import simple_parse_to_segments
+from parsers import simple_parse_to_segments
 
 logger = logging.getLogger(__name__)
 
