@@ -793,7 +793,7 @@ def main():
     parser = argparse.ArgumentParser(prog='hangupsbot',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-d', '--debug', action='store_true',
-                        help=_('log detailed debugging messages'))
+                        help=_('log detailed debugging messages to file'))
     parser.add_argument('--log', default=default_log_path,
                         help=_('log file path'))
     parser.add_argument('--cookies', default=default_cookies_path,
