@@ -152,7 +152,6 @@ class HangupsBot(object):
             loop = asyncio.get_event_loop()
 
             # initialise pluggable framework
-            hooks.load(self)
             sinks.start(self)
 
             # Connect to Hangouts
@@ -567,8 +566,6 @@ class HangupsBot(object):
     def _on_event(self, conv_event):
         """Handle conversation events"""
 
-        self._execute_hook("on_event", conv_event)
-
         if self.get_config_option('workaround.duplicate-events'):
             if conv_event.id_ in self._cache_event_id:
                 logger.warning("duplicate event {} ignored".format(conv_event.id_))
@@ -586,19 +583,16 @@ class HangupsBot(object):
                                              source="event")
 
         if isinstance(conv_event, hangups.ChatMessageEvent):
-            self._execute_hook("on_chat_message", event)
             asyncio.async(
                 self._handlers.handle_chat_message(event)
             ).add_done_callback(lambda future: future.result())
 
         elif isinstance(conv_event, hangups.MembershipChangeEvent):
-            self._execute_hook("on_membership_change", event)
             asyncio.async(
                 self._handlers.handle_chat_membership(event)
             ).add_done_callback(lambda future: future.result())
 
         elif isinstance(conv_event, hangups.RenameEvent):
-            self._execute_hook("on_rename", event)
             asyncio.async(
                 self._handlers.handle_chat_rename(event)
             ).add_done_callback(lambda future: future.result())
@@ -611,16 +605,6 @@ class HangupsBot(object):
 
         else:
             logger.warning("_on_event(): unrecognised event type: {}".format(type(conv_event)))
-
-    def _execute_hook(self, funcname, parameters=None):
-        for hook in self._hooks:
-            method = getattr(hook, funcname, None)
-            if method:
-                try:
-                    method(parameters)
-                    logger.warning('[DEPRECATED] upgrade hooks to plugins.register_handler()')
-                except Exception as e:
-                    logger.exception("HOOKS: {}".format(hook))
 
     def _on_disconnect(self):
         """Handle disconnecting"""
