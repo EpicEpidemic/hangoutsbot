@@ -49,6 +49,8 @@ from slackclient import SlackClient
 from websocket import WebSocketConnectionClosedException
 
 logger = logging.getLogger(__name__)
+
+
 # fix for simple_smile support
 # emoji.EMOJI_UNICODE[':simple_smile:'] = emoji.EMOJI_UNICODE[':white_smiling_face:']
 # emoji.EMOJI_ALIAS_UNICODE[':simple_smile:'] = emoji.EMOJI_UNICODE[':white_smiling_face:']
@@ -1088,7 +1090,7 @@ class SlackRTM(object):
         event._slackrtm_no_repeat = True
         event._external_source = event_tokens[0].strip() + "@slackrtm"
 
-    def handle_reply(self, reply):
+    def handle_slack_message(self, reply):
         try:
             msg = SlackMessage(self, reply)
             msg_html = self.textToHtml(msg.text)
@@ -1119,24 +1121,17 @@ class SlackRTM(object):
                     else:
                         # we should not upload the images, so we have to send the url instead
                         response += msg.file_attachment
+                context_ = {'base': {'tags': ['slack', 'relay'], 'source': 'slackrtm', 'importance': 50},
+                            'reprocessor': self.bot.call_shared("reprocessor.attach_reprocessor",
+                                                                self._repeater_cleaner,
+                                                                return_as_dict=True)}
                 self.loop.call_soon_threadsafe(asyncio.async,
-                                               self.bot.coro_send_message(
-                                                   sync.hangoutid, response,
-                                                   context={
-                                                       'base': {
-                                                           'tags': ['slack', 'relay'],
-                                                           'source': 'slackrtm',
-                                                           'importance': 50
-                                                       },
-                                                       'reprocessor': self.bot.call_shared(
-                                                           "reprocessor.attach_reprocessor",
-                                                           self._repeater_cleaner, return_as_dict=True)
-                                                   }
-                                               )
-                                               )
+                                               self.bot.coro_send_message(sync.hangoutid, response, context=context_))
 
     @asyncio.coroutine
     def handle_ho_message(self, event):
+        if self.bot._user_list.get_user(event.user_id).is_self:
+            return
         if "_slackrtm_no_repeat" in dir(event) and event._slackrtm_no_repeat:
             return
         for sync in self.get_syncs(hangoutid=event.conv_id):
@@ -1241,15 +1236,17 @@ class SlackRTMThread(threading.Thread):
                     return
                 replies = self._listener.rtm_read()
                 if replies:
-                    if 'type' in replies[0]:
-                        if replies[0]['type'] == 'hello':
-                            # print('slackrtm: ignoring first replies including type=hello message to avoid message duplication: %s...' % str(replies)[:30])
-                            continue
+                    if 'type' in replies[0] and replies[0]['type'] == 'hello':
+                        logger.debug(
+                            'ignoring first replies including type=hello message to avoid message duplication: %s...'
+                            % str(replies)[:30])
+                        continue
                     for reply in replies:
                         try:
-                            self._listener.handle_reply(reply)
+                            self._listener.handle_slack_message(reply)
                         except Exception as e:
-                            logger.exception('error during handle_reply(): %s\n%s', str(e), pprint.pformat(reply))
+                            logger.exception('error during handle_slack_message(): %s\n%s', str(e),
+                                             pprint.pformat(reply))
                 now = int(time.time())
                 if now > last_ping + 30:
                     self._listener.ping()
